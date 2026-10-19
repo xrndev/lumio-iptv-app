@@ -74,7 +74,13 @@ abstract class SourceStore {
 /// macOS/iOS, Keystore en Android, libsecret en Linux).
 class SecureSourceStore implements SourceStore {
   SecureSourceStore([FlutterSecureStorage? storage, this._key = 'active_source_v1'])
-      : _storage = storage ?? const FlutterSecureStorage();
+      : _storage = storage ??
+            const FlutterSecureStorage(
+              // macOS sin firma de desarrollador: el llavero "Data Protection" (por defecto)
+              // exige el entitlement keychain-access-groups y falla con -34018. El llavero
+              // clásico funciona sin él. Probado en CI (macOS 15).
+              mOptions: MacOsOptions(useDataProtectionKeyChain: false),
+            );
 
   final String _key;
   final FlutterSecureStorage _storage;

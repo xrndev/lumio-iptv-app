@@ -6,6 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_launcher/core/storage/source_store.dart';
 import 'package:iptv_launcher/features/playlists/playlist_providers.dart';
 
+/// Simula un llavero que rechaza escribir y borrar (p. ej. macOS sin entitlement, -34018).
+class _BrokenStore extends MemorySourceStore {
+  @override
+  Future<void> write(SavedSource source) async => throw StateError('-34018 sin entitlement');
+  @override
+  Future<void> clear() async => throw StateError('-34018 sin entitlement');
+}
+
 ProviderContainer _boot(SourceStore store) {
   final c = ProviderContainer(overrides: [sourceStoreProvider.overrideWithValue(store)]);
   addTearDown(c.dispose);
@@ -124,6 +132,18 @@ void main() {
         expect(store.value, isNull);
       }
     });
+  });
+
+  test('si el almacén seguro falla al guardar, la lista se carga igualmente', () async {
+    final store = _BrokenStore();
+    final c = _boot(store);
+    await c.read(playlistProvider.future);
+    await c.read(playlistProvider.notifier).loadFile(m3u);
+    expect(c.read(playlistProvider).hasError, isFalse);
+    expect(c.read(playlistProvider).value!.channels, hasLength(2));
+    // y borrar tampoco revienta aunque el almacén falle
+    await c.read(playlistProvider.notifier).clear();
+    expect(c.read(playlistProvider).value, isNull);
   });
 
   test('si al arrancar la fuente no se puede abrir, se conserva y se puede reintentar', () async {

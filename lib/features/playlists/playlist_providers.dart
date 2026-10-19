@@ -73,9 +73,23 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
     final parts = decoded.split('|');
     if (parts.length != 3 || parts.any((p) => p.isEmpty)) return null;
     final source = SavedSource.xtream(host: parts[0], username: parts[1], password: parts[2]);
-    await store.write(source);
-    await store.markPresetApplied();
+    await _persist(store, source);
+    try {
+      await store.markPresetApplied();
+    } catch (e) {
+      debugPrint('No se pudo registrar la precarga: $e');
+    }
     return source;
+  }
+
+  /// Guardar es un extra: si el almacén seguro de la plataforma falla (llavero sin
+  /// permisos, sin servicio de secretos…) la fuente debe usarse igualmente.
+  Future<void> _persist(SourceStore store, SavedSource source) async {
+    try {
+      await store.write(source);
+    } catch (e) {
+      debugPrint('No se pudo guardar la fuente (se usará solo en esta sesión): $e');
+    }
   }
 
   Future<_Opened> _open(SavedSource s) async {
@@ -122,7 +136,7 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final opened = await _open(source);
-      await ref.read(sourceStoreProvider).write(source);
+      await _persist(ref.read(sourceStoreProvider), source);
       _apply(source, opened);
       return opened.playlist;
     });
@@ -135,7 +149,11 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
 
   /// Elimina la fuente guardada y vuelve al estado inicial. Solo la llama el usuario.
   Future<void> clear() async {
-    await ref.read(sourceStoreProvider).clear();
+    try {
+      await ref.read(sourceStoreProvider).clear();
+    } catch (e) {
+      debugPrint('No se pudo borrar la fuente guardada: $e');
+    }
     _reset();
     ref.read(activeSourceProvider.notifier).state = null;
     state = const AsyncData(null);

@@ -59,10 +59,12 @@ jobs:
       - name: Prueba de humo (pantalla virtual)
         run: xvfb-run -a -s "-screen 0 1280x800x24" flutter test integration_test/smoke_test.dart -d linux
       - name: Almacén seguro real (libsecret + gnome-keyring)
+        timeout-minutes: 8
         run: |
           xvfb-run -a -s "-screen 0 1280x800x24" dbus-run-session -- bash -c '
-            eval "$(echo -n "" | gnome-keyring-daemon --unlock --components=secrets)"
-            export GNOME_KEYRING_CONTROL
+            # --daemonize: el demonio se desvincula de la salida y eval no se queda esperando.
+            eval "$(printf "\n" | gnome-keyring-daemon --daemonize --login)"
+            export GNOME_KEYRING_CONTROL SSH_AUTH_SOCK
             flutter test integration_test/secure_store_test.dart -d linux'
       - name: Paquete e instalador (install.sh) y arranque de la app instalada
         run: |
