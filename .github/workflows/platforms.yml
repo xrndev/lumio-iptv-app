@@ -1,14 +1,27 @@
 name: Plataformas
 
-# Ejecuta la prueba de humo (integration_test/smoke_test.dart) en Linux, macOS y en un
-# simulador de iOS. Es ligera: arranca la app real con libmpv y recorre lo esencial.
-# Los ejecutores de macOS cuentan 10x en minutos de GitHub Actions en repos privados,
-# por eso solo corre al subir a main, a mano o en PRs.
+# Solo `calidad` (Linux, ~2 min) corre sola en cada push o PR.
+# Las pruebas en Linux (pantalla virtual), macOS y simulador de iOS se lanzan A MANO:
+#   Actions → Plataformas → Run workflow (y se elige qué sistemas ejecutar).
+# Los ejecutores de macOS cuentan 10x en minutos de Actions en repositorios privados.
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      linux:
+        description: 'Linux (xvfb): prueba de humo, almacén seguro e instalador'
+        type: boolean
+        default: true
+      macos:
+        description: 'macOS: prueba de humo y almacén seguro (llavero)'
+        type: boolean
+        default: true
+      ios:
+        description: 'Simulador de iPhone: prueba de humo y almacén seguro'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -29,43 +42,59 @@ jobs:
       - run: flutter test
 
   linux:
+    if: github.event_name == 'workflow_dispatch' && inputs.linux
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Dependencias (compilación, libmpv y pantalla virtual)
+      - name: Dependencias (compilación, libmpv, pantalla virtual y llavero)
         run: |
           sudo apt-get update
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev \
-            libmpv-dev mpv libsecret-1-dev libjsoncpp-dev xvfb libgl1-mesa-dri libglx-mesa0
+            libmpv-dev mpv libsecret-1-dev libjsoncpp-dev xvfb libgl1-mesa-dri libglx-mesa0 \
+            gnome-keyring dbus-x11 libsecret-tools
       - uses: subosito/flutter-action@v2
         with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
       - run: flutter pub get
-      - name: Prueba de humo en Linux (pantalla virtual)
+      - name: Prueba de humo (pantalla virtual)
         run: xvfb-run -a -s "-screen 0 1280x800x24" flutter test integration_test/smoke_test.dart -d linux
+      - name: Almacén seguro real (libsecret + gnome-keyring)
+        run: |
+          xvfb-run -a -s "-screen 0 1280x800x24" dbus-run-session -- bash -c '
+            eval "$(echo -n "" | gnome-keyring-daemon --unlock --components=secrets)"
+            export GNOME_KEYRING_CONTROL
+            flutter test integration_test/secure_store_test.dart -d linux'
+      - name: Paquete e instalador (install.sh) y arranque de la app instalada
+        run: |
+          ./scripts/package.sh
+          mkdir -p "$RUNNER_TEMP/pkg" && tar -xzf dist/IPTV-Launcher-linux-x64.tar.gz -C "$RUNNER_TEMP/pkg"
+          "$RUNNER_TEMP/pkg/IPTV-Launcher-linux-x64/install.sh"
+          test -x "$HOME/.local/share/iptv-launcher/iptv_launcher"
+          test -f "$HOME/.local/share/applications/iptv-launcher.desktop"
+          # La app instalada debe arrancar y mantenerse viva 10 s bajo pantalla virtual.
+          xvfb-run -a -s "-screen 0 1280x800x24" bash -c '
+            "$HOME/.local/bin/iptv-launcher" & pid=$!
+            sleep 10
+            if kill -0 $pid 2>/dev/null; then echo "La app instalada sigue viva"; kill $pid; else echo "La app instalada se cerró"; exit 1; fi'
 
   macos:
+    if: github.event_name == 'workflow_dispatch' && inputs.macos
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
       - run: flutter pub get
       - name: Prueba de humo en macOS
-        # En el ejecutor (sin sesión gráfica) `open` no puede poner la app en primer plano
-        # ("Failed to foreground app") y flutter devuelve 79 "No tests were found" aunque
-        # la prueba corre y pasa. Se valida el resultado que imprime la propia prueba.
-        run: |
-          set +e +o pipefail
-          flutter test integration_test/smoke_test.dart -d macos 2>&1 | tee macos_test.log
-          if grep -q "❌" macos_test.log; then echo "La prueba falló en macOS"; exit 1; fi
-          grep -q "✅ arranque, navegación, foco con mando y reproductor" macos_test.log \
-            || { echo "La prueba no llegó a ejecutarse en macOS"; exit 1; }
+        run: bash scripts/ci/run_macos_test.sh integration_test/smoke_test.dart "arranque, navegación, foco con mando y reproductor"
+      - name: Almacén seguro real en macOS (llavero)
+        run: bash scripts/ci/run_macos_test.sh integration_test/secure_store_test.dart "guardar, leer y borrar en el almacén seguro real"
 
   ios:
-    runs-on: macos-latest
-    timeout-minutes: 40
+    if: github.event_name == 'workflow_dispatch' && inputs.ios
+    runs-on: macos-15
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -80,3 +109,5 @@ jobs:
           echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
       - name: Prueba de humo en iOS (simulador)
         run: flutter test integration_test/smoke_test.dart -d "$SIM_UDID"
+      - name: Almacén seguro real en iOS (llavero del simulador)
+        run: flutter test integration_test/secure_store_test.dart -d "$SIM_UDID"
