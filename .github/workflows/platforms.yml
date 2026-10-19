@@ -1,0 +1,74 @@
+name: Plataformas
+
+# Ejecuta la prueba de humo (integration_test/smoke_test.dart) en Linux, macOS y en un
+# simulador de iOS. Es ligera: arranca la app real con libmpv y recorre lo esencial.
+# Los ejecutores de macOS cuentan 10x en minutos de GitHub Actions en repos privados,
+# por eso solo corre al subir a main, a mano o en PRs.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: '3.47.7'
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencias (compilación, libmpv y pantalla virtual)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev \
+            libmpv-dev mpv libsecret-1-dev libjsoncpp-dev xvfb libgl1-mesa-dri libglx-mesa0
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get
+      - name: Prueba de humo en Linux (pantalla virtual)
+        run: xvfb-run -a -s "-screen 0 1280x800x24" flutter test integration_test/smoke_test.dart -d linux
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get
+      - name: Prueba de humo en macOS
+        run: flutter test integration_test/smoke_test.dart -d macos
+
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
+      - run: flutter pub get
+      - name: Arrancar un simulador de iPhone
+        run: |
+          UDID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          echo "Simulador: $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          echo "SIM_UDID=$UDID" >> "$GITHUB_ENV"
+      - name: Prueba de humo en iOS (simulador)
+        run: flutter test integration_test/smoke_test.dart -d "$SIM_UDID"
