@@ -13,6 +13,7 @@ import '../../playlists/playlist_providers.dart';
 import '../../../core/util/channel_names.dart';
 import '../../../design_system/theme/app_theme.dart';
 import '../../library/presentation/favorite_button.dart';
+import '../../cast/cast_button.dart';
 import '../data/player_engine.dart';
 import '../player_providers.dart';
 import 'remote_keys.dart';
@@ -185,13 +186,17 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
                           : (live ? prettyGroupName(channel.group) : channel.group),
                       epgUid: (channel != null && live) ? channel.uid : null,
                       // Estrella para guardar el canal en favoritos desde el propio reproductor.
-                      trailing: (channel != null && live)
-                          ? FavoriteButton(
-                              kind: LibraryKind.channel,
-                              uid: channel.uid,
-                              inactiveColor: Colors.white,
-                            )
-                          : null,
+                      trailing: channel == null
+                          ? null
+                          : Row(mainAxisSize: MainAxisSize.min, children: [
+                              if (live)
+                                FavoriteButton(
+                                  kind: LibraryKind.channel,
+                                  uid: channel.uid,
+                                  inactiveColor: Colors.white,
+                                ),
+                              CastButton(channel: channel),
+                            ]),
                     ),
                   ),
                 ),

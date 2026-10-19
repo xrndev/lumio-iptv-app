@@ -2,6 +2,9 @@
     <!-- Sin esto la app release no puede abrir ninguna conexión de red. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Chromecast: descubrir dispositivos en la red local (mDNS) -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
     <!-- Android TV: sin pantalla táctil, con mando (leanback). required=false para
          que siga instalándose en móviles/tablets. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>

@@ -19,11 +19,16 @@ Reproductor IPTV hecho con Flutter: una sola base de código para Android, iOS, 
 - **Búsqueda global** de canales, películas y series desde el menú.
 - **La fuente se guarda** y se carga sola al abrir la app (credenciales cifradas por el sistema); solo se elimina desde Ajustes.
 - Controles del reproductor: volumen (slider, silencio, rueda del ratón), pantalla completa y atajos de teclado: `Espacio` pausa, `M` silencio, `↑`/`↓` volumen, `F` pantalla completa, `Esc` salir.
+- **Favoritos** (⭐ en canales, pósteres, fichas y reproductor), **canales recientes** y **continuar viendo** (películas y episodios se reanudan donde los dejaste; barra de progreso y marca de visto). Se guardan por cuenta y se pueden **pasar a otro dispositivo** con un código (Favoritos → ⇄): se fusionan sin perder nada.
+- **Guía de programación**: "Ahora / Después" con barra de progreso en el reproductor (si tu proveedor la ofrece).
+- **Chromecast**: emite el canal o la película a un Chromecast desde el reproductor (móvil, tablet y escritorio).
+- Arranque rápido: las listas de la cuenta se guardan en disco (6 h) y se usan sin red si hace falta; logos y pósteres también se cachean en disco.
+- Nombres de canal limpios (sin `ES|`, símbolos ni etiquetas de calidad; la calidad sale como insignia), búsqueda sin distinguir tildes y avisos de caducidad de la cuenta.
 - Diseño moderno con tarjetas de cristal. El diseño anterior sigue disponible en la rama/etiqueta `design-v1-classic`.
 
 ## Pendiente
 
-EPG (XMLTV), base de datos local (drift), favoritos, "continuar viendo", control parental, multi-pantalla, PiP nativo, selector de pistas en la UI, módulo freemium y PVR. El detalle está en [`CLAUDE.md`](CLAUDE.md).
+Sincronización automática entre dispositivos (hoy: código manual; necesita un servidor), EPG completa (XMLTV, parrilla), base de datos local (drift), control parental, multi-pantalla, PiP nativo, selector de pistas en la UI, módulo freemium y PVR. El detalle está en [`CLAUDE.md`](CLAUDE.md).
 
 ## Instalar (usuarios)
 
