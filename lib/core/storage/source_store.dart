@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../util/stable_hash.dart';
+
 enum SourceType { url, file, xtream }
 
 /// Fuente activa del usuario. Es lo único que se persiste: los canales se
@@ -25,6 +27,10 @@ class SavedSource {
   final String location;
   final String username;
   final String password;
+
+  /// Identificador estable de la fuente: no incluye la contraseña, así que cambiarla no hace
+  /// "perder" favoritos ni progreso, y dos dispositivos con la misma cuenta comparten id.
+  String get id => stableHash('${type.name}|$location|$username');
 
   /// Texto seguro para mostrar (nunca incluye contraseñas ni tokens de la URL).
   String get label {

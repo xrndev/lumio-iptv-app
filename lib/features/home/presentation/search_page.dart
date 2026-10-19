@@ -6,6 +6,7 @@ import '../../../core/models/media.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
 import '../../player/presentation/player_page.dart';
+import 'channel_tile.dart';
 import '../../playlists/playlist_providers.dart';
 import '../../vod/presentation/detail_pages.dart';
 import '../../vod/presentation/media_page.dart';
@@ -118,26 +119,12 @@ class _ChannelRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final s = Theme.of(context).colorScheme;
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-      leading: Container(
-        width: 44,
-        height: 44,
-        padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(color: s.surfaceContainerHigh, borderRadius: BorderRadius.circular(12)),
-        child: channel.logo.isEmpty
-            ? Icon(Icons.tv_rounded, color: s.onSurfaceVariant)
-            : Image.network(channel.logo,
-                fit: BoxFit.contain,
-                cacheWidth: 88,
-                excludeFromSemantics: true,
-                errorBuilder: (_, __, ___) => Icon(Icons.tv_rounded, color: s.onSurfaceVariant)),
+    return SizedBox(
+      height: channelTileExtent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: ChannelTile(channel: channel, onTap: () => openPlayer(context, ref, channel)),
       ),
-      title: Text(channel.name.replaceAll(RegExp(r'\s*\|\s*[A-Z]{2}$'), ''), maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: channel.group.isEmpty ? null : Text(channel.group, maxLines: 1, overflow: TextOverflow.ellipsis),
-      trailing: const Icon(Icons.play_arrow_rounded),
-      onTap: () => openPlayer(context, ref, channel),
     );
   }
 }

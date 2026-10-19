@@ -1,3 +1,6 @@
+import '../util/stable_hash.dart';
+import 'media.dart';
+
 /// Canal de una lista. Inmutable y sin closures: viaja entre Isolates sin coste.
 class Channel {
   const Channel({
@@ -16,7 +19,20 @@ class Channel {
     this.referrer,
     this.isLive = true,
     this.altUrl,
+    this.stableId,
+    this.media,
   });
+
+  /// Solo en películas y episodios: datos para guardar y reanudar el progreso.
+  final MediaMeta? media;
+
+  /// Identificador que no cambia aunque cambie la URL (usuario/contraseña, formato…): el
+  /// `stream_id` en Xtream. Es la clave de favoritos, recientes y progreso.
+  final String? stableId;
+
+  /// Clave estable de este canal/contenido dentro de su fuente. En M3U, el `tvg-id` si existe;
+  /// si no, un hash de la URL.
+  String get uid => stableId ?? (tvgId.isNotEmpty ? 't$tvgId' : 'u${stableHash(url)}');
 
   /// URL alternativa del mismo canal (p. ej. `.m3u8` si la principal es `.ts`),
   /// usada como respaldo si la principal no abre.

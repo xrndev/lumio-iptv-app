@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/channel.dart';
+import '../../../core/util/channel_names.dart';
 import '../../../design_system/theme/app_theme.dart';
-import '../../../design_system/widgets/focus_ring.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
 import '../../player/player_providers.dart';
+import 'channel_tile.dart';
 import '../../playlists/playlist_providers.dart';
 import '../../playlists/presentation/add_source_dialog.dart';
 
@@ -130,7 +131,7 @@ class _GroupChips extends ConsumerWidget {
             onTap: () => ref.read(selectedGroupProvider.notifier).state = null),
         for (final g in groups)
           CategoryChip(
-              label: g,
+              label: prettyGroupName(g),
               selected: selected == g,
               onTap: () => ref.read(selectedGroupProvider.notifier).state = g),
       ],
@@ -178,99 +179,15 @@ class _ChannelList extends ConsumerWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 12),
       itemCount: channels.length,
-      itemExtent: 72,
+      itemExtent: channelTileExtent,
       itemBuilder: (context, i) {
         final c = channels[i];
-        return _ChannelTile(
+        return ChannelTile(
           channel: c,
           playing: currentIndex == c.index,
           onTap: () => onTap(c),
         );
       },
-    );
-  }
-}
-
-class _ChannelTile extends StatelessWidget {
-  const _ChannelTile({required this.channel, required this.playing, required this.onTap});
-
-  final Channel channel;
-  final bool playing;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = Theme.of(context).colorScheme;
-    final name = channel.name.replaceAll(RegExp(r'\s*\|\s*[A-Z]{2}$'), '');
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
-      child: Material(
-        color: playing ? s.primary.withValues(alpha: 0.14) : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: playing ? s.primary.withValues(alpha: 0.5) : Colors.transparent,
-          ),
-        ),
-        child: FocusRing(
-          child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          hoverColor: s.onSurface.withValues(alpha: 0.05),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: s.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: channel.logo.isEmpty
-                      ? Icon(Icons.tv_rounded, color: s.onSurfaceVariant)
-                      : Image.network(
-                          channel.logo,
-                          fit: BoxFit.contain,
-                          cacheWidth: 96,
-                          excludeFromSemantics: true,
-                          errorBuilder: (_, __, ___) =>
-                              Icon(Icons.tv_rounded, color: s.onSurfaceVariant),
-                        ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: playing ? FontWeight.w700 : FontWeight.w600)),
-                      if (channel.group.isNotEmpty)
-                        Text(channel.group,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                if (playing)
-                  const Icon(Icons.graphic_eq_rounded, color: AppColors.cyan)
-                else if (channel.supportsCatchup)
-                  Icon(Icons.history_rounded, size: 18, color: s.onSurfaceVariant),
-              ],
-            ),
-          ),
-        ),
-        ),
-      ),
     );
   }
 }

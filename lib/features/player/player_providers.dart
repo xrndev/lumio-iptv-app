@@ -38,10 +38,13 @@ final playerEngineProvider = Provider<PlayerEngine>((ref) {
 
 final currentChannelProvider = StateProvider<Channel?>((ref) => null);
 
+/// Abre un canal o contenido; con [startAt] empieza en ese punto (reanudar).
+typedef PlayChannel = Future<void> Function(Channel channel, {Duration? startAt});
+
 /// Cambia de canal: actualiza el estado y abre el stream.
-final playChannelProvider = Provider<Future<void> Function(Channel)>((ref) {
-  return (channel) async {
+final playChannelProvider = Provider<PlayChannel>((ref) {
+  return (channel, {startAt}) async {
     ref.read(currentChannelProvider.notifier).state = channel;
-    await ref.read(playerEngineProvider).play(channel);
+    await ref.read(playerEngineProvider).play(channel, startAt: startAt);
   };
 });

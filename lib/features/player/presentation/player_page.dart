@@ -6,8 +6,9 @@ import '../player_providers.dart';
 import 'player_view.dart';
 
 /// Reproduce [channel] a pantalla completa y detiene el stream al salir.
-Future<void> openPlayer(BuildContext context, WidgetRef ref, Channel channel) async {
-  await ref.read(playChannelProvider)(channel);
+Future<void> openPlayer(BuildContext context, WidgetRef ref, Channel channel,
+    {Duration? startAt}) async {
+  await ref.read(playChannelProvider)(channel, startAt: startAt);
   if (!context.mounted) return;
   await Navigator.of(context).push(MaterialPageRoute<void>(
     fullscreenDialog: true,

@@ -188,17 +188,25 @@ class PlayerEngine {
   Future<void> _open(String url, Channel channel, int generation) async {
     _activeUrl = url;
     await player.open(
-      Media(url, httpHeaders: channel.httpHeaders.isEmpty ? null : channel.httpHeaders),
+      Media(
+        url,
+        httpHeaders: channel.httpHeaders.isEmpty ? null : channel.httpHeaders,
+        start: _startAt, // reanudar donde se dejó (solo películas y episodios)
+      ),
       play: true,
     );
     _watchdog?.cancel();
     _watchdog = Timer(PlaybackRecovery.watchdog, () => unawaited(_recover(generation)));
   }
 
-  Future<void> play(Channel channel) async {
+  Duration? _startAt;
+
+  /// Abre [channel]; con [startAt] empieza en ese punto (reanudar película o episodio).
+  Future<void> play(Channel channel, {Duration? startAt}) async {
     final hadStream = _activeUrl != null && status.value.phase != PlaybackPhase.idle;
     final generation = ++_generation;
     _channel = channel;
+    _startAt = startAt;
     _recovery = PlaybackRecovery(hasAlternate: channel.altUrl != null);
     _lastIssue = null;
     status.value = const PlaybackStatus(PlaybackPhase.loading, '');
@@ -214,7 +222,7 @@ class PlayerEngine {
   /// Reintenta el canal actual desde cero (botón "Reintentar").
   Future<void> retry() async {
     final c = _channel;
-    if (c != null) await play(c);
+    if (c != null) await play(c, startAt: _startAt);
   }
 
   Future<void> togglePlay() => player.playOrPause();

@@ -7,7 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart' show AudioTrack, SubtitleTrack, Tracks;
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../../core/library/library_data.dart';
+import '../../../core/util/channel_names.dart';
 import '../../../design_system/theme/app_theme.dart';
+import '../../library/presentation/favorite_button.dart';
 import '../data/player_engine.dart';
 import '../player_providers.dart';
 import 'remote_keys.dart';
@@ -172,8 +175,20 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
                     child: _TopBar(
                       live: live,
                       onBack: widget.onBack,
-                      title: channel?.name.replaceAll(RegExp(r'\s*\|\s*[A-Z]{2}$'), '') ?? '',
-                      subtitle: channel?.group ?? '',
+                      title: channel == null
+                          ? ''
+                          : (live ? parseChannelName(channel.name).title : channel.name),
+                      subtitle: channel == null
+                          ? ''
+                          : (live ? prettyGroupName(channel.group) : channel.group),
+                      // Estrella para guardar el canal en favoritos desde el propio reproductor.
+                      trailing: (channel != null && live)
+                          ? FavoriteButton(
+                              kind: LibraryKind.channel,
+                              uid: channel.uid,
+                              inactiveColor: Colors.white,
+                            )
+                          : null,
                     ),
                   ),
                 ),
@@ -319,12 +334,16 @@ class _TopBar extends StatelessWidget {
     required this.subtitle,
     required this.live,
     this.onBack,
+    this.trailing,
   });
 
   final String title;
   final String subtitle;
   final bool live;
   final VoidCallback? onBack;
+
+  /// Widget al final de la barra (p. ej. la estrella de favoritos).
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -381,6 +400,7 @@ class _TopBar extends StatelessWidget {
                 ],
               ),
             ),
+            if (trailing != null) trailing!,
           ],
         ),
       ),

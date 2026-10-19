@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/library/library_data.dart';
 import '../../../core/models/media.dart';
 import '../../../design_system/theme/app_theme.dart';
+import '../../../design_system/widgets/cached_logo.dart';
 import '../../../design_system/widgets/focus_ring.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
+import '../../library/presentation/favorite_button.dart';
 import '../../playlists/playlist_providers.dart';
 import '../../playlists/presentation/add_source_dialog.dart';
 import '../vod_providers.dart';
@@ -182,20 +185,12 @@ class PosterCard extends StatelessWidget {
                       color: s.surfaceContainerHigh,
                       child: entry.poster.isEmpty
                           ? Icon(Icons.movie_rounded, size: 40, color: s.onSurfaceVariant)
-                          : Image.network(
-                              entry.poster,
+                          : CachedImage(
+                              url: entry.poster,
                               fit: BoxFit.cover,
                               cacheWidth: 340,
-                              excludeFromSemantics: true,
-                              errorBuilder: (_, __, ___) =>
+                              fallback:
                                   Icon(Icons.movie_rounded, size: 40, color: s.onSurfaceVariant),
-                              loadingBuilder: (c, child, p) => p == null
-                                  ? child
-                                  : const Center(
-                                      child: SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(strokeWidth: 2))),
                             ),
                     ),
                   ),
@@ -209,18 +204,23 @@ class PosterCard extends StatelessWidget {
                           color: Colors.black.withValues(alpha: 0.7),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.star_rounded, size: 13, color: Color(0xFFFFC857)),
-                            const SizedBox(width: 2),
-                            Text(entry.rating!.toStringAsFixed(1),
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                          ],
-                        ),
+                        // Sin estrella: la estrella es de favoritos.
+                        child: Text(entry.rating!.toStringAsFixed(1),
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                       ),
                     ),
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: FavoriteButton(
+                      kind: entry is VodItem ? LibraryKind.movie : LibraryKind.series,
+                      uid: entry.uid,
+                      size: 20,
+                      overlay: true,
+                      inactiveColor: Colors.white,
+                    ),
+                  ),
                 ],
               ),
             ),

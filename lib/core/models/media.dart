@@ -6,6 +6,9 @@ abstract class MediaEntry {
   double? get rating;
   String get group;
   String get year;
+
+  /// Clave estable para favoritos y progreso: `m<id>` (película) o `s<id>` (serie).
+  String get uid;
 }
 
 enum MediaKind { movies, series }
@@ -46,6 +49,9 @@ class VodItem implements MediaEntry {
 
   /// Extensión del contenedor (`mp4`, `mkv`…).
   final String ext;
+
+  @override
+  String get uid => 'm$id';
 }
 
 class SeriesItem implements MediaEntry {
@@ -76,6 +82,37 @@ class SeriesItem implements MediaEntry {
   final String plot;
   final String genre;
   final String backdrop;
+
+  @override
+  String get uid => 's$id';
+}
+
+/// Datos de una película o episodio que se está reproduciendo; los usa "Continuar viendo".
+class MediaMeta {
+  const MediaMeta({
+    required this.id,
+    required this.isEpisode,
+    required this.ext,
+    required this.title,
+    this.poster = '',
+    this.subtitle = '',
+    this.seriesId,
+  });
+
+  /// Título para mostrar: el de la película o el de la serie (en un episodio).
+  final String title;
+
+  /// `stream_id` de la película o `id` del episodio.
+  final int id;
+  final bool isEpisode;
+  final String ext;
+  final String poster;
+
+  /// Para episodios: "Temporada 2 · Episodio 5".
+  final String subtitle;
+
+  /// Serie a la que pertenece el episodio.
+  final int? seriesId;
 }
 
 class MediaCatalog {

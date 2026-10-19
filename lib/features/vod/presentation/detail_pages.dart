@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/library/library_data.dart';
 import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
 import '../../../core/network/xtream_client.dart';
+import '../../../core/util/channel_names.dart';
+import '../../../core/util/format.dart';
 import '../../../design_system/theme/app_theme.dart';
+import '../../../design_system/widgets/cached_logo.dart';
 import '../../../design_system/widgets/focus_ring.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
+import '../../library/library_providers.dart';
+import '../../library/presentation/favorite_button.dart';
 import '../../player/presentation/player_page.dart';
 import '../../playlists/playlist_providers.dart';
 import '../vod_providers.dart';
@@ -37,8 +43,8 @@ class _DetailScaffold extends StatelessWidget {
           if (backdrop.isNotEmpty)
             Opacity(
               opacity: 0.28,
-              child: Image.network(backdrop,
-                  fit: BoxFit.cover, cacheWidth: 1280, errorBuilder: (_, __, ___) => const SizedBox()),
+              child: CachedImage(
+                  url: backdrop, fit: BoxFit.cover, cacheWidth: 1280, fallback: const SizedBox()),
             ),
           DecoratedBox(
             decoration: BoxDecoration(
@@ -92,10 +98,11 @@ class _Poster extends StatelessWidget {
             color: s.surfaceContainerHigh,
             child: url.isEmpty
                 ? const Icon(Icons.movie_rounded, size: 56)
-                : Image.network(url,
+                : CachedImage(
+                    url: url,
                     fit: BoxFit.cover,
                     cacheWidth: 520,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.movie_rounded, size: 56)),
+                    fallback: const Icon(Icons.movie_rounded, size: 56)),
           ),
         ),
       ),
@@ -148,7 +155,10 @@ class MovieDetailPage extends ConsumerWidget {
     final loading = ref.watch(vodDetailProvider(item.id)).isLoading;
     final s = Theme.of(context).colorScheme;
 
-    void play() {
+    final progress = ref.watch(currentLibraryProvider.select((l) => l.progressOf(item.uid)));
+    final resumeAt = progress?.resumeAt;
+
+    void play({Duration? startAt}) {
       final creds = ref.read(xtreamCredentialsProvider);
       if (creds == null) return;
       openPlayer(
@@ -160,7 +170,16 @@ class MovieDetailPage extends ConsumerWidget {
           url: XtreamClient.movieUrl(creds, item),
           group: item.group,
           isLive: false,
+          stableId: item.uid,
+          media: MediaMeta(
+            id: item.id,
+            isEpisode: false,
+            ext: item.ext,
+            title: cleanTitle(item.title),
+            poster: item.poster,
+          ),
         ),
+        startAt: startAt,
       );
     }
 
@@ -179,10 +198,18 @@ class MovieDetailPage extends ConsumerWidget {
               if (item.year.isNotEmpty) _Chip(Icons.calendar_today_rounded, item.year),
               if (detail != null && detail.duration.isNotEmpty) _Chip(Icons.schedule_rounded, detail.duration),
               if (detail != null && detail.genre.isNotEmpty) _Chip(Icons.theater_comedy_rounded, detail.genre),
-              if (item.group.isNotEmpty) _Chip(Icons.folder_outlined, item.group),
+              if (item.group.isNotEmpty) _Chip(Icons.folder_outlined, prettyGroupName(item.group)),
+              if (progress?.finished ?? false) const _Chip(Icons.check_circle_outline_rounded, 'Visto'),
             ]),
             const SizedBox(height: 20),
-            _PlayButton(label: 'Reproducir', onPressed: play),
+            Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              if (resumeAt != null) ...[
+                _PlayButton(label: 'Continuar · ${formatClock(resumeAt)}', onPressed: () => play(startAt: resumeAt)),
+                OutlinedButton(onPressed: () => play(), child: const Text('Desde el principio')),
+              ] else
+                _PlayButton(label: 'Reproducir', onPressed: play),
+              FavoriteButton(kind: LibraryKind.movie, uid: item.uid, size: 28),
+            ]),
             const SizedBox(height: 24),
             if (loading && detail == null)
               const LinearProgressIndicator()
@@ -242,21 +269,43 @@ class SeriesDetailPage extends ConsumerStatefulWidget {
 class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
   int? _season;
 
-  void _play(Episode e) {
+  void _play(Episode e, {Duration? startAt}) {
     final creds = ref.read(xtreamCredentialsProvider);
     if (creds == null) return;
-    final label = 'T${e.season} E${e.number}';
+    final series = cleanTitle(widget.item.title);
     openPlayer(
       context,
       ref,
       Channel(
         index: -1,
-        name: '${cleanTitle(widget.item.title)} · $label',
+        name: '$series · T${e.season} E${e.number}',
         url: XtreamClient.episodeUrl(creds, e),
         group: cleanEpisodeTitle(e, widget.item),
         isLive: false,
+        stableId: 'e${e.id}',
+        media: MediaMeta(
+          id: e.id,
+          isEpisode: true,
+          ext: e.ext,
+          title: series,
+          poster: widget.item.poster,
+          subtitle: 'Temporada ${e.season} · Episodio ${e.number}',
+          seriesId: widget.item.id,
+        ),
       ),
+      startAt: startAt,
     );
+  }
+
+  /// Episodio de esta serie que se estaba viendo (el último empezado y sin terminar).
+  (Episode, ProgressEntry)? _episodeToContinue(Map<int, List<Episode>> seasons, SourceLibrary lib) {
+    (Episode, ProgressEntry)? best;
+    for (final e in seasons.values.expand((l) => l)) {
+      final p = lib.progressOf('e${e.id}');
+      if (p == null || p.resumeAt == null) continue;
+      if (best == null || p.t > best.$2.t) best = (e, p);
+    }
+    return best;
   }
 
   @override
@@ -269,6 +318,8 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
     final seasons = detail?.seasons ?? const <int, List<Episode>>{};
     final current = _season ?? (seasons.isEmpty ? null : seasons.keys.first);
     final episodes = current == null ? const <Episode>[] : (seasons[current] ?? const <Episode>[]);
+    final library = ref.watch(currentLibraryProvider);
+    final resume = _episodeToContinue(seasons, library);
 
     final info = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,6 +332,15 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
           if (item.year.isNotEmpty) _Chip(Icons.calendar_today_rounded, item.year),
           if (item.genre.isNotEmpty) _Chip(Icons.theater_comedy_rounded, item.genre),
           if (seasons.isNotEmpty) _Chip(Icons.layers_rounded, '${seasons.length} temporadas'),
+        ]),
+        const SizedBox(height: 16),
+        Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          if (resume != null)
+            _PlayButton(
+              label: 'Continuar T${resume.$1.season} E${resume.$1.number} · ${formatClock(resume.$2.resumeAt!)}',
+              onPressed: () => _play(resume.$1, startAt: resume.$2.resumeAt),
+            ),
+          FavoriteButton(kind: LibraryKind.series, uid: item.uid, size: 28),
         ]),
         const SizedBox(height: 16),
         Text(plot.isEmpty ? 'Sin sinopsis disponible.' : plot, style: const TextStyle(height: 1.5, fontSize: 15)),
@@ -331,7 +391,14 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
                 ],
               ),
               const SizedBox(height: 12),
-              for (final e in episodes) _EpisodeTile(episode: e, series: item, onTap: () => _play(e)),
+              for (final e in episodes)
+                _EpisodeTile(
+                  episode: e,
+                  series: item,
+                  progress: library.progressOf('e${e.id}'),
+                  // Pulsar un episodio a medias lo reanuda; uno visto empieza de cero.
+                  onTap: () => _play(e, startAt: library.progressOf('e${e.id}')?.resumeAt),
+                ),
             ],
           ],
         );
@@ -350,11 +417,17 @@ String cleanEpisodeTitle(Episode e, SeriesItem series) {
 }
 
 class _EpisodeTile extends StatelessWidget {
-  const _EpisodeTile({required this.episode, required this.series, required this.onTap});
+  const _EpisodeTile({
+    required this.episode,
+    required this.series,
+    required this.onTap,
+    this.progress,
+  });
 
   final Episode episode;
   final SeriesItem series;
   final VoidCallback onTap;
+  final ProgressEntry? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -399,6 +472,18 @@ class _EpisodeTile extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(color: s.onSurfaceVariant, fontSize: 13)),
+                      if (progress != null && !progress!.finished && progress!.fraction > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: progress!.fraction,
+                              minHeight: 4,
+                              semanticsLabel: 'Progreso del episodio',
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -408,7 +493,13 @@ class _EpisodeTile extends StatelessWidget {
                     child: Text('$mins min', style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
                   ),
                 const SizedBox(width: 8),
-                Icon(Icons.play_circle_fill_rounded, color: s.primary, size: 32),
+                if (progress?.finished ?? false)
+                  Tooltip(
+                    message: 'Visto',
+                    child: Icon(Icons.check_circle_rounded, color: s.secondary, size: 32),
+                  )
+                else
+                  Icon(Icons.play_circle_fill_rounded, color: s.primary, size: 32),
               ],
             ),
           ),
