@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/channel.dart';
 import '../../../design_system/theme/app_theme.dart';
+import '../../../design_system/widgets/focus_ring.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
 import '../../player/player_providers.dart';
 import '../../playlists/playlist_providers.dart';
@@ -212,7 +213,8 @@ class _ChannelTile extends StatelessWidget {
             color: playing ? s.primary.withValues(alpha: 0.5) : Colors.transparent,
           ),
         ),
-        child: InkWell(
+        child: FocusRing(
+          child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
           hoverColor: s.onSurface.withValues(alpha: 0.05),
@@ -266,6 +268,7 @@ class _ChannelTile extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

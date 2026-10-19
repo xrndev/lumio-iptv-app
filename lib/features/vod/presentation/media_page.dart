@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/media.dart';
 import '../../../design_system/theme/app_theme.dart';
+import '../../../design_system/widgets/focus_ring.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
 import '../../playlists/playlist_providers.dart';
@@ -163,7 +164,9 @@ class PosterCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: entry.title,
-      child: InkWell(
+      child: FocusRing(
+        radius: 16,
+        child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Column(
@@ -229,6 +232,7 @@ class PosterCard extends StatelessWidget {
             if (subtitle.isNotEmpty)
               Text(subtitle, style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
           ],
+        ),
         ),
       ),
     );

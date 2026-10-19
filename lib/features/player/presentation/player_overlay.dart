@@ -79,9 +79,23 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
   KeyEventResult _onKey(FocusNode node, KeyEvent e) {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
     final k = e.logicalKey;
-    if (k == LogicalKeyboardKey.arrowUp) {
+    final wasHidden = !_visible;
+    if (e is KeyDownEvent) _poke(); // cualquier tecla del mando muestra los controles
+    // OK / Enter del mando: pausa o reanuda (la primera pulsación solo muestra los controles).
+    // Solo con el foco en el propio overlay: si lo tiene un botón, OK debe activarlo.
+    if (e is KeyDownEvent &&
+        node.hasPrimaryFocus &&
+        (k == LogicalKeyboardKey.select ||
+            k == LogicalKeyboardKey.enter ||
+            k == LogicalKeyboardKey.numpadEnter ||
+            k == LogicalKeyboardKey.gameButtonA ||
+            k == LogicalKeyboardKey.mediaPlayPause)) {
+      if (!wasHidden || k == LogicalKeyboardKey.mediaPlayPause) _engine.togglePlay();
+      return KeyEventResult.handled;
+    }
+    if (k == LogicalKeyboardKey.arrowUp && node.hasPrimaryFocus) {
       _changeVolume(5);
-    } else if (k == LogicalKeyboardKey.arrowDown) {
+    } else if (k == LogicalKeyboardKey.arrowDown && node.hasPrimaryFocus) {
       _changeVolume(-5);
     } else if (k == LogicalKeyboardKey.arrowRight && !_isLive) {
       _skip(10);

@@ -2,11 +2,16 @@
     <!-- Sin esto la app release no puede abrir ninguna conexión de red. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Android TV: sin pantalla táctil, con mando (leanback). required=false para
+         que siga instalándose en móviles/tablets. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+    <uses-feature android:name="android.software.leanback" android:required="false"/>
     <application
         android:usesCleartextTraffic="true"
         android:label="IPTV Launcher"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:banner="@drawable/tv_banner">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -27,6 +32,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

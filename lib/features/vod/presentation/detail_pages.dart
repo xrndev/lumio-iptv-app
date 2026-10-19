@@ -5,6 +5,7 @@ import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
 import '../../../core/network/xtream_client.dart';
 import '../../../design_system/theme/app_theme.dart';
+import '../../../design_system/widgets/focus_ring.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
 import '../../player/presentation/player_page.dart';
@@ -361,7 +362,9 @@ class _EpisodeTile extends StatelessWidget {
     final mins = episode.durationSecs == null ? null : (episode.durationSecs! / 60).round();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: GlassCard(
+      child: FocusRing(
+        radius: 16,
+        child: GlassCard(
         radius: 16,
         blur: 0,
         child: InkWell(
@@ -409,6 +412,7 @@ class _EpisodeTile extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

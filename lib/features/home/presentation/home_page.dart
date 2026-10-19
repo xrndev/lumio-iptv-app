@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../design_system/adaptive/adaptive_scaffold.dart';
 import '../../../design_system/adaptive/screen_type.dart';
 import '../../../design_system/widgets/glass_card.dart';
+import '../../../platform_channels/tv_provider.dart';
 import '../../player/player_providers.dart';
 import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
@@ -119,8 +120,11 @@ class _LiveTab extends ConsumerWidget {
     // LayoutBuilder: decide por el espacio disponible tras la navegación.
     return LayoutBuilder(builder: (context, c) {
       final type = ScreenType.fromWidth(c.maxWidth + _navWidth(context));
+      // En TV el mando no puede dar foco a un reproductor incrustado: la lista
+      // abre el canal a pantalla completa (donde OK / flechas controlan el vídeo).
+      final tv = ref.watch(isTelevisionProvider).valueOrNull ?? false;
 
-      if (type.isCompact) {
+      if (type.isCompact || tv) {
         return ChannelListPane(
           onChannelTap: (channel) => openPlayer(context, ref, channel),
         );

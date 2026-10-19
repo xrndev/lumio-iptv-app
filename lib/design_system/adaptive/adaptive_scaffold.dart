@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/focus_ring.dart';
 import '../widgets/glass_card.dart';
 import 'screen_type.dart';
 
@@ -195,7 +196,10 @@ class _NavItem extends StatelessWidget {
       label: dest.label,
       child: Tooltip(
         message: extended || stacked ? '' : dest.label,
-        child: InkWell(
+        child: FocusRing(
+          radius: 16,
+          child: InkWell(
+          autofocus: selected,
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
@@ -220,6 +224,7 @@ class _NavItem extends StatelessWidget {
                     ],
                   ),
           ),
+        ),
         ),
       ),
     );
