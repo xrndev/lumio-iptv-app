@@ -15,6 +15,15 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+// Algunos plugins (p. ej. file_picker) se publican compilados contra Android 34 pero sus
+// dependencias (androidx lifecycle) exigen 36: se fuerza la misma compileSdk en todos.
+subprojects {
+    val forceCompileSdk: Project.() -> Unit = {
+        (extensions.findByName("android") as? com.android.build.gradle.BaseExtension)
+            ?.compileSdkVersion(36)
+    }
+    if (state.executed) forceCompileSdk() else afterEvaluate { forceCompileSdk() }
+}
 subprojects {
     project.evaluationDependsOn(":app")
 }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -26,6 +27,9 @@ final sourceStoreProvider = Provider<SourceStore>((ref) {
   return SecureSourceStore();
 });
 
+/// Fuente precargada en la compilación; vacía en las builds normales.
+final buildPresetProvider = Provider<String>((ref) => const String.fromEnvironment('IPTV_PRESET'));
+
 /// Fuente activa guardada (para mostrarla en Ajustes). `null` = ninguna.
 final activeSourceProvider = StateProvider<SavedSource?>((ref) => null);
 
@@ -44,12 +48,34 @@ class _Opened {
 class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
   @override
   Future<M3uPlaylist?> build() async {
-    final saved = await ref.read(sourceStoreProvider).read();
+    final store = ref.read(sourceStoreProvider);
+    final saved = await store.read() ?? await _presetSource(store);
     if (saved == null) return null;
     final opened = await _open(saved); // si falla (sin red) el estado es error y la fuente se conserva
     // No se pueden modificar otros providers durante build().
     unawaited(Future.microtask(() => _apply(saved, opened)));
     return opened.playlist;
+  }
+
+  /// Cuenta Xtream precargada en la compilación:
+  /// `--dart-define=IPTV_PRESET=<base64 de "host|usuario|clave">` (base64 para no
+  /// depender del entrecomillado del shell). Vacía por defecto: solo para builds de
+  /// prueba hechas a medida. Se aplica una vez.
+  Future<SavedSource?> _presetSource(SourceStore store) async {
+    final raw = ref.read(buildPresetProvider);
+    if (raw.isEmpty || await store.presetApplied()) return null;
+    final String decoded;
+    try {
+      decoded = utf8.decode(base64.decode(raw));
+    } on FormatException {
+      return null;
+    }
+    final parts = decoded.split('|');
+    if (parts.length != 3 || parts.any((p) => p.isEmpty)) return null;
+    final source = SavedSource.xtream(host: parts[0], username: parts[1], password: parts[2]);
+    await store.write(source);
+    await store.markPresetApplied();
+    return source;
   }
 
   Future<_Opened> _open(SavedSource s) async {

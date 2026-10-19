@@ -63,6 +63,11 @@ abstract class SourceStore {
   Future<SavedSource?> read();
   Future<void> write(SavedSource source);
   Future<void> clear();
+
+  /// Una fuente "precargada" en la compilación solo se aplica la primera vez; si el
+  /// usuario la borra después, no debe reaparecer.
+  Future<bool> presetApplied();
+  Future<void> markPresetApplied();
 }
 
 /// Almacenamiento cifrado por el sistema (DPAPI en Windows, Keychain en
@@ -90,12 +95,30 @@ class SecureSourceStore implements SourceStore {
 
   @override
   Future<void> clear() => _storage.delete(key: _key);
+
+  @override
+  Future<bool> presetApplied() async {
+    try {
+      return await _storage.read(key: '${_key}_preset') == '1';
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> markPresetApplied() => _storage.write(key: '${_key}_preset', value: '1');
 }
 
 /// Para tests.
 class MemorySourceStore implements SourceStore {
   MemorySourceStore([this.value]);
   SavedSource? value;
+  bool _presetApplied = false;
+
+  @override
+  Future<bool> presetApplied() async => _presetApplied;
+  @override
+  Future<void> markPresetApplied() async => _presetApplied = true;
 
   @override
   Future<SavedSource?> read() async => value;

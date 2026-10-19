@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,6 +76,54 @@ void main() {
 
     final next = _boot(store);
     expect((await next.read(playlistProvider.future))!.channels, hasLength(2));
+  });
+
+  group('fuente precargada en la compilación', () {
+    ProviderContainer boot(SourceStore store, String preset) {
+      final c = ProviderContainer(overrides: [
+        sourceStoreProvider.overrideWithValue(store),
+        buildPresetProvider.overrideWithValue(preset),
+      ]);
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    // El host de prueba no existe: abrir la fuente falla, pero eso no importa aquí.
+    final preset = base64.encode(utf8.encode('http://127.0.0.1:9|usuario|clave'));
+
+    test('por defecto (vacía) no hace nada', () async {
+      final store = MemorySourceStore();
+      expect(await boot(store, '').read(playlistProvider.future), isNull);
+      expect(store.value, isNull);
+    });
+
+    test('se aplica en el primer arranque y se guarda', () async {
+      final store = MemorySourceStore();
+      await boot(store, preset).read(playlistProvider.future).catchError((_) => null);
+      expect(store.value?.type, SourceType.xtream);
+      expect(store.value?.username, 'usuario');
+      expect(await store.presetApplied(), isTrue);
+    });
+
+    test('si el usuario la borra, no reaparece al reiniciar', () async {
+      final store = MemorySourceStore();
+      final first = boot(store, preset);
+      await first.read(playlistProvider.future).catchError((_) => null);
+      await first.read(playlistProvider.notifier).clear();
+      expect(store.value, isNull);
+
+      final second = boot(store, preset); // "reinicio" con la misma build
+      expect(await second.read(playlistProvider.future), isNull);
+      expect(store.value, isNull);
+    });
+
+    test('un valor mal formado se ignora', () async {
+      for (final bad in ['no es base64!', base64.encode(utf8.encode('solo-un-campo'))]) {
+        final store = MemorySourceStore();
+        expect(await boot(store, bad).read(playlistProvider.future), isNull);
+        expect(store.value, isNull);
+      }
+    });
   });
 
   test('si al arrancar la fuente no se puede abrir, se conserva y se puede reintentar', () async {
