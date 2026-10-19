@@ -9,7 +9,10 @@ import 'player_overlay.dart';
 /// Superficie de vídeo. Los controles se pasan como `controls` de [Video] para
 /// que también existan en pantalla completa.
 class PlayerView extends ConsumerWidget {
-  const PlayerView({super.key});
+  const PlayerView({super.key, this.onBack});
+
+  /// Si se indica, la barra superior muestra un botón "volver".
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,7 +28,7 @@ class PlayerView extends ConsumerWidget {
             label: channel == null ? 'Reproductor sin canal' : 'Reproduciendo ${channel.name}',
             child: Video(
               controller: engine.video,
-              controls: (state) => PlayerOverlay(state: state),
+              controls: (state) => PlayerOverlay(state: state, onBack: onBack),
             ),
           ),
           if (channel == null) const IgnorePointer(child: _EmptyPlayer()),

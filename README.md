@@ -11,17 +11,20 @@ Reproductor IPTV hecho con Flutter: una sola base de código para Android, iOS, 
 - Reproducción con [`media_kit`](https://github.com/media-kit/media-kit) (libmpv) y aceleración por hardware. Probado con HLS H.264.
 - Interfaz adaptativa según el ancho de ventana: barra inferior (< 600 dp), rail lateral (600–839 dp) y sidebar con vista dividida lista + reproductor (≥ 840 dp).
 - Búsqueda de canales, filtro por categorías, selector de relación de aspecto y logos.
+- **Películas y series** (cuentas Xtream): rejilla de pósteres con categorías y búsqueda, fichas con sinopsis, temporadas y episodios, barra de progreso, ±10 s y selector de audio/subtítulos.
+- **Búsqueda global** de canales, películas y series desde el menú.
+- **La fuente se guarda** y se carga sola al abrir la app (credenciales cifradas por el sistema); solo se elimina desde Ajustes.
 - Controles del reproductor: volumen (slider, silencio, rueda del ratón), pantalla completa y atajos de teclado: `Espacio` pausa, `M` silencio, `↑`/`↓` volumen, `F` pantalla completa, `Esc` salir.
 - Diseño moderno con tarjetas de cristal. El diseño anterior sigue disponible en la rama/etiqueta `design-v1-classic`.
 
 ## Pendiente
 
-EPG (XMLTV), base de datos local (drift), persistencia de fuentes, favoritos, control parental, VOD y series (TMDB), multi-pantalla, PiP nativo, selector de pistas en la UI, módulo freemium y PVR. El detalle está en [`CLAUDE.md`](CLAUDE.md).
+EPG (XMLTV), base de datos local (drift), favoritos, "continuar viendo", control parental, multi-pantalla, PiP nativo, selector de pistas en la UI, módulo freemium y PVR. El detalle está en [`CLAUDE.md`](CLAUDE.md).
 
 ## Requisitos
 
 - [Flutter](https://docs.flutter.dev/get-started/install) estable (probado con 3.47.7 / Dart 3.13).
-- Windows: **Modo desarrollador** activado (`start ms-settings:developers`), necesario para los symlinks de los plugins, y Visual Studio con la carga de trabajo de C++.
+- Windows: **Modo desarrollador** activado (`start ms-settings:developers`), necesario para los symlinks de los plugins, y Visual Studio con la carga de trabajo de C++ **y el componente ATL** (lo exige `flutter_secure_storage`).
 - Node.js solo si quieres reinstalar las skills de diseño.
 
 ## Puesta en marcha

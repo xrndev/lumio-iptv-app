@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/channel.dart';
 import '../../../design_system/theme/app_theme.dart';
+import '../../../design_system/widgets/wheel_scroll_row.dart';
 import '../../player/player_providers.dart';
 import '../../playlists/playlist_providers.dart';
 import '../../playlists/presentation/add_source_dialog.dart';
@@ -21,7 +22,9 @@ class ChannelListPane extends ConsumerWidget {
       error: (e, _) => _Message(
         icon: Icons.error_outline_rounded,
         text: 'No se pudo cargar la fuente:\n${_clean(e)}',
-        action: 'Probar otra fuente',
+        action: 'Reintentar',
+        onAction: () => ref.invalidate(playlistProvider),
+        secondaryAction: 'Probar otra fuente',
       ),
       data: (data) {
         if (data == null) {
@@ -117,38 +120,19 @@ class _GroupChips extends ConsumerWidget {
     final groups = ref.watch(groupsProvider);
     if (groups.length < 2) return const SizedBox.shrink();
     final selected = ref.watch(selectedGroupProvider);
-    final s = Theme.of(context).colorScheme;
 
-    Widget chip(String label, bool isSelected, VoidCallback onTap) => Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: ChoiceChip(
-            label: Text(label),
-            selected: isSelected,
-            onSelected: (_) => onTap(),
-            showCheckmark: false,
-            labelStyle: TextStyle(
-              color: isSelected ? Colors.white : s.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-            selectedColor: s.primary,
-            backgroundColor: s.surfaceContainerHigh,
-            side: BorderSide.none,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          ),
-        );
-
-    return SizedBox(
-      height: 44,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          chip('Todos', selected == null,
-              () => ref.read(selectedGroupProvider.notifier).state = null),
-          for (final g in groups)
-            chip(g, selected == g, () => ref.read(selectedGroupProvider.notifier).state = g),
-        ],
-      ),
+    return WheelScrollRow(
+      children: [
+        CategoryChip(
+            label: 'Todos',
+            selected: selected == null,
+            onTap: () => ref.read(selectedGroupProvider.notifier).state = null),
+        for (final g in groups)
+          CategoryChip(
+              label: g,
+              selected: selected == g,
+              onTap: () => ref.read(selectedGroupProvider.notifier).state = g),
+      ],
     );
   }
 }
@@ -289,10 +273,20 @@ class _ChannelTile extends StatelessWidget {
 }
 
 class _Message extends StatelessWidget {
-  const _Message({required this.icon, required this.text, required this.action});
+  const _Message({
+    required this.icon,
+    required this.text,
+    required this.action,
+    this.onAction,
+    this.secondaryAction,
+  });
   final IconData icon;
   final String text;
   final String action;
+
+  /// Acción principal; por defecto abre el diálogo de añadir fuente.
+  final VoidCallback? onAction;
+  final String? secondaryAction;
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +303,15 @@ class _Message extends StatelessWidget {
             const SizedBox(height: 14),
             Text(text, textAlign: TextAlign.center),
             const SizedBox(height: 18),
-            FilledButton(onPressed: () => showAddSourceDialog(context), child: Text(action)),
+            FilledButton(
+              onPressed: onAction ?? () => showAddSourceDialog(context),
+              child: Text(action),
+            ),
+            if (secondaryAction != null)
+              TextButton(
+                onPressed: () => showAddSourceDialog(context),
+                child: Text(secondaryAction!),
+              ),
           ],
         ),
       ),

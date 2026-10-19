@@ -4,6 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_kit/media_kit.dart' show AudioTrack, SubtitleTrack, Tracks;
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../design_system/theme/app_theme.dart';
@@ -11,11 +12,13 @@ import '../data/player_engine.dart';
 import '../player_providers.dart';
 
 /// Controles superpuestos: play/pausa, volumen (slider, mute, rueda, ↑/↓),
-/// relación de aspecto y pantalla completa. Se ocultan solos tras 3 s.
+/// progreso y ±10 s (solo VOD), pistas de audio/subtítulos, relación de aspecto
+/// y pantalla completa. Se ocultan solos tras 3 s.
 class PlayerOverlay extends ConsumerStatefulWidget {
-  const PlayerOverlay({super.key, required this.state});
+  const PlayerOverlay({super.key, required this.state, this.onBack});
 
   final VideoState state;
+  final VoidCallback? onBack;
 
   @override
   ConsumerState<PlayerOverlay> createState() => _PlayerOverlayState();
@@ -29,6 +32,7 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
   String? _hud;
 
   PlayerEngine get _engine => ref.read(playerEngineProvider);
+  bool get _isLive => ref.read(currentChannelProvider)?.isLive ?? true;
 
   @override
   void dispose() {
@@ -66,6 +70,12 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
     _poke();
   }
 
+  Future<void> _skip(int seconds) async {
+    await _engine.seekBy(Duration(seconds: seconds));
+    _showHud(seconds > 0 ? '+${seconds}s' : '${seconds}s');
+    _poke();
+  }
+
   KeyEventResult _onKey(FocusNode node, KeyEvent e) {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
     final k = e.logicalKey;
@@ -73,6 +83,10 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
       _changeVolume(5);
     } else if (k == LogicalKeyboardKey.arrowDown) {
       _changeVolume(-5);
+    } else if (k == LogicalKeyboardKey.arrowRight && !_isLive) {
+      _skip(10);
+    } else if (k == LogicalKeyboardKey.arrowLeft && !_isLive) {
+      _skip(-10);
     } else if (e is KeyDownEvent && k == LogicalKeyboardKey.keyM) {
       _toggleMute();
     } else if (e is KeyDownEvent && k == LogicalKeyboardKey.space) {
@@ -92,10 +106,11 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
   Widget build(BuildContext context) {
     final engine = ref.watch(playerEngineProvider);
     final channel = ref.watch(currentChannelProvider);
+    final live = channel?.isLive ?? true;
 
     return Focus(
       focusNode: _focus,
-      autofocus: false,
+      autofocus: widget.onBack != null, // en pantalla dedicada, atajos desde el inicio
       onKeyEvent: _onKey,
       child: Listener(
         onPointerSignal: (s) {
@@ -114,7 +129,6 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Barra superior
                 Positioned(
                   top: 0,
                   left: 0,
@@ -122,12 +136,13 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
                   child: _Fade(
                     visible: _visible,
                     child: _TopBar(
+                      live: live,
+                      onBack: widget.onBack,
                       title: channel?.name.replaceAll(RegExp(r'\s*\|\s*[A-Z]{2}$'), '') ?? '',
                       subtitle: channel?.group ?? '',
                     ),
                   ),
                 ),
-                // Barra inferior
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -137,7 +152,9 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
                     child: _BottomBar(
                       engine: engine,
                       state: widget.state,
+                      live: live,
                       onMute: _toggleMute,
+                      onSkip: _skip,
                       onVolume: (v) {
                         engine.setVolume(v);
                         _poke();
@@ -145,7 +162,6 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
                     ),
                   ),
                 ),
-                // HUD de volumen
                 Center(
                   child: AnimatedOpacity(
                     opacity: _hud == null ? 0 : 1,
@@ -179,9 +195,17 @@ class _Fade extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.title, required this.subtitle});
+  const _TopBar({
+    required this.title,
+    required this.subtitle,
+    required this.live,
+    this.onBack,
+  });
+
   final String title;
   final String subtitle;
+  final bool live;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -194,20 +218,33 @@ class _TopBar extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        padding: EdgeInsets.fromLTRB(onBack == null ? 20 : 8, 12, 20, 28),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.live,
-                borderRadius: BorderRadius.circular(6),
+            if (onBack != null)
+              IconButton(
+                tooltip: 'Volver',
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                color: Colors.white,
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: onBack,
               ),
-              child: const Text('EN VIVO',
-                  style: TextStyle(
-                      color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
-            ),
-            const SizedBox(width: 12),
+            if (live) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.live,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('EN VIVO',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6)),
+              ),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,13 +273,17 @@ class _BottomBar extends StatelessWidget {
   const _BottomBar({
     required this.engine,
     required this.state,
+    required this.live,
     required this.onMute,
+    required this.onSkip,
     required this.onVolume,
   });
 
   final PlayerEngine engine;
   final VideoState state;
+  final bool live;
   final VoidCallback onMute;
+  final ValueChanged<int> onSkip;
   final ValueChanged<double> onVolume;
 
   @override
@@ -256,83 +297,234 @@ class _BottomBar extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 32, 12, 10),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(12, 28, 12, 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            StreamBuilder<bool>(
-              stream: engine.player.stream.playing,
-              initialData: engine.player.state.playing,
-              builder: (context, snap) {
-                final playing = snap.data ?? false;
-                return _RoundButton(
-                  icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  tooltip: playing ? 'Pausar (Espacio)' : 'Reproducir (Espacio)',
-                  size: 30,
-                  onPressed: engine.togglePlay,
-                );
-              },
-            ),
-            const SizedBox(width: 4),
-            StreamBuilder<double>(
-              stream: engine.volumeStream,
-              initialData: engine.volume,
-              builder: (context, snap) {
-                final v = (snap.data ?? 100).clamp(0, 100).toDouble();
-                return Row(
-                  children: [
-                    _RoundButton(
-                      icon: v == 0
-                          ? Icons.volume_off_rounded
-                          : v < 40
-                              ? Icons.volume_down_rounded
-                              : Icons.volume_up_rounded,
-                      tooltip: v == 0 ? 'Activar sonido (M)' : 'Silenciar (M)',
-                      onPressed: onMute,
-                    ),
-                    SizedBox(
-                      width: 120,
-                      child: SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: AppColors.cyan,
-                          inactiveTrackColor: Colors.white24,
-                          thumbColor: Colors.white,
+            if (!live) _SeekBar(engine: engine),
+            Row(
+              children: [
+                if (!live)
+                  _RoundButton(
+                    icon: Icons.replay_10_rounded,
+                    tooltip: 'Retroceder 10 s (←)',
+                    onPressed: () => onSkip(-10),
+                  ),
+                StreamBuilder<bool>(
+                  stream: engine.player.stream.playing,
+                  initialData: engine.player.state.playing,
+                  builder: (context, snap) {
+                    final playing = snap.data ?? false;
+                    return _RoundButton(
+                      icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                      tooltip: playing ? 'Pausar (Espacio)' : 'Reproducir (Espacio)',
+                      size: 30,
+                      onPressed: engine.togglePlay,
+                    );
+                  },
+                ),
+                if (!live)
+                  _RoundButton(
+                    icon: Icons.forward_10_rounded,
+                    tooltip: 'Avanzar 10 s (→)',
+                    onPressed: () => onSkip(10),
+                  ),
+                const SizedBox(width: 4),
+                StreamBuilder<double>(
+                  stream: engine.volumeStream,
+                  initialData: engine.volume,
+                  builder: (context, snap) {
+                    final v = (snap.data ?? 100).clamp(0, 100).toDouble();
+                    return Row(
+                      children: [
+                        _RoundButton(
+                          icon: v == 0
+                              ? Icons.volume_off_rounded
+                              : v < 40
+                                  ? Icons.volume_down_rounded
+                                  : Icons.volume_up_rounded,
+                          tooltip: v == 0 ? 'Activar sonido (M)' : 'Silenciar (M)',
+                          onPressed: onMute,
                         ),
-                        child: Semantics(
-                          label: 'Volumen',
-                          value: '${v.round()}%',
-                          child: Slider(value: v, min: 0, max: 100, onChanged: onVolume),
+                        SizedBox(
+                          width: 110,
+                          child: SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              activeTrackColor: AppColors.cyan,
+                              inactiveTrackColor: Colors.white24,
+                              thumbColor: Colors.white,
+                            ),
+                            child: Semantics(
+                              label: 'Volumen',
+                              value: '${v.round()}%',
+                              child: Slider(value: v, min: 0, max: 100, onChanged: onVolume),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 38,
-                      child: Text('${v.round()}%',
-                          style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                    ),
+                        SizedBox(
+                          width: 38,
+                          child: Text('${v.round()}%',
+                              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const Spacer(),
+                _TracksButton(engine: engine),
+                PopupMenuButton<AspectMode>(
+                  tooltip: 'Relación de aspecto',
+                  icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white),
+                  onSelected: engine.setAspect,
+                  itemBuilder: (_) => [
+                    for (final m in AspectMode.values) PopupMenuItem(value: m, child: Text(m.label)),
                   ],
-                );
-              },
-            ),
-            const Spacer(),
-            PopupMenuButton<AspectMode>(
-              tooltip: 'Relación de aspecto',
-              icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white),
-              onSelected: engine.setAspect,
-              itemBuilder: (_) => [
-                for (final m in AspectMode.values) PopupMenuItem(value: m, child: Text(m.label)),
+                ),
+                _RoundButton(
+                  icon: state.isFullscreen()
+                      ? Icons.fullscreen_exit_rounded
+                      : Icons.fullscreen_rounded,
+                  tooltip: 'Pantalla completa (F)',
+                  size: 28,
+                  onPressed: state.toggleFullscreen,
+                ),
               ],
-            ),
-            _RoundButton(
-              icon: state.isFullscreen()
-                  ? Icons.fullscreen_exit_rounded
-                  : Icons.fullscreen_rounded,
-              tooltip: 'Pantalla completa (F)',
-              size: 28,
-              onPressed: state.toggleFullscreen,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Barra de progreso con tiempo transcurrido / total.
+class _SeekBar extends StatefulWidget {
+  const _SeekBar({required this.engine});
+  final PlayerEngine engine;
+
+  @override
+  State<_SeekBar> createState() => _SeekBarState();
+}
+
+class _SeekBarState extends State<_SeekBar> {
+  double? _drag; // segundos mientras se arrastra
+
+  static String _fmt(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return h > 0 ? '$h:$m:$s' : '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final e = widget.engine;
+    return StreamBuilder<Duration>(
+      stream: e.durationStream,
+      initialData: e.duration,
+      builder: (context, durSnap) {
+        final total = durSnap.data ?? Duration.zero;
+        return StreamBuilder<Duration>(
+          stream: e.positionStream,
+          initialData: e.position,
+          builder: (context, posSnap) {
+            final pos = posSnap.data ?? Duration.zero;
+            final max = total.inMilliseconds.toDouble();
+            final value = (_drag ?? pos.inMilliseconds.toDouble()).clamp(0, max > 0 ? max : 1).toDouble();
+            return Row(
+              children: [
+                SizedBox(
+                  width: 52,
+                  child: Text(_fmt(Duration(milliseconds: value.round())),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                ),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: AppColors.violet,
+                      inactiveTrackColor: Colors.white24,
+                      thumbColor: Colors.white,
+                    ),
+                    child: Semantics(
+                      label: 'Progreso',
+                      value: _fmt(pos),
+                      child: Slider(
+                        value: value,
+                        min: 0,
+                        max: max > 0 ? max : 1,
+                        onChanged: max > 0 ? (v) => setState(() => _drag = v) : null,
+                        onChangeEnd: (v) async {
+                          await e.seek(Duration(milliseconds: v.round()));
+                          if (mounted) setState(() => _drag = null);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 52,
+                  child: Text(_fmt(total),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Menú de pistas de audio y subtítulos.
+class _TracksButton extends StatelessWidget {
+  const _TracksButton({required this.engine});
+  final PlayerEngine engine;
+
+  static String _label(String id, String? title, String? language, int n) {
+    if (id == 'auto') return 'Automático';
+    if (id == 'no') return 'Desactivados';
+    final parts = [if (title != null && title.isNotEmpty) title, if (language != null && language.isNotEmpty) language];
+    return parts.isEmpty ? 'Pista $n' : parts.join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<Tracks>(
+      stream: engine.tracksStream,
+      initialData: engine.player.state.tracks,
+      builder: (context, snap) {
+        final tracks = snap.data ?? const Tracks();
+        final audio = tracks.audio;
+        final subs = tracks.subtitle;
+        final hasChoice = audio.length > 3 || subs.length > 2;
+        return PopupMenuButton<Object>(
+          tooltip: 'Audio y subtítulos',
+          enabled: audio.isNotEmpty || subs.isNotEmpty,
+          icon: Icon(Icons.subtitles_rounded,
+              color: hasChoice ? Colors.white : Colors.white70),
+          onSelected: (t) {
+            if (t is AudioTrack) engine.setAudioTrack(t);
+            if (t is SubtitleTrack) engine.setSubtitleTrack(t);
+          },
+          itemBuilder: (_) => [
+            const PopupMenuItem<Object>(enabled: false, child: Text('Audio')),
+            for (var i = 0; i < audio.length; i++)
+              PopupMenuItem<Object>(
+                value: audio[i],
+                child: Text(_label(audio[i].id, audio[i].title, audio[i].language, i)),
+              ),
+            const PopupMenuDivider(),
+            const PopupMenuItem<Object>(enabled: false, child: Text('Subtítulos')),
+            for (var i = 0; i < subs.length; i++)
+              PopupMenuItem<Object>(
+                value: subs[i],
+                child: Text(_label(subs[i].id, subs[i].title, subs[i].language, i)),
+              ),
+          ],
+        );
+      },
     );
   }
 }

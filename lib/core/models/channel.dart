@@ -14,7 +14,11 @@ class Channel {
     this.catchupSource = '',
     this.userAgent,
     this.referrer,
+    this.isLive = true,
   });
+
+  /// `false` para películas y episodios: el reproductor muestra barra de progreso.
+  final bool isLive;
 
   /// Posición en la lista original (orden estable, usado como clave).
   final int index;

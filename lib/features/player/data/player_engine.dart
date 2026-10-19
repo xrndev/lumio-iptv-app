@@ -84,6 +84,21 @@ class PlayerEngine {
   }
 
   Future<void> togglePlay() => player.playOrPause();
+  Future<void> stop() => player.stop();
+
+  // --- Posición (VOD / series) ----------------------------------------------
+  Stream<Duration> get positionStream => player.stream.position;
+  Stream<Duration> get durationStream => player.stream.duration;
+  Duration get position => player.state.position;
+  Duration get duration => player.state.duration;
+
+  Future<void> seek(Duration to) {
+    final max = duration;
+    final clamped = to < Duration.zero ? Duration.zero : (max > Duration.zero && to > max ? max : to);
+    return player.seek(clamped);
+  }
+
+  Future<void> seekBy(Duration delta) => seek(position + delta);
 
   // --- Volumen (0–100) ------------------------------------------------------
   double _preMuteVolume = 100;

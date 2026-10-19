@@ -9,17 +9,27 @@ import '../../../design_system/adaptive/adaptive_scaffold.dart';
 import '../../../design_system/adaptive/screen_type.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../player/player_providers.dart';
+import '../../../core/models/media.dart';
+import '../../../core/network/xtream_client.dart';
+import '../../player/presentation/player_page.dart';
 import '../../player/presentation/player_view.dart';
 import '../../playlists/playlist_providers.dart';
+import '../../settings/settings_page.dart';
+import '../../vod/presentation/media_page.dart';
 import 'channel_list_pane.dart';
+import 'search_page.dart';
 
 const _destinations = [
   AdaptiveDestination(
       icon: Icons.live_tv_outlined, selectedIcon: Icons.live_tv_rounded, label: 'En vivo'),
   AdaptiveDestination(
-      icon: Icons.star_outline_rounded, selectedIcon: Icons.star_rounded, label: 'Favoritos'),
+      icon: Icons.movie_outlined, selectedIcon: Icons.movie_rounded, label: 'Películas'),
   AdaptiveDestination(
-      icon: Icons.movie_outlined, selectedIcon: Icons.movie_rounded, label: 'VOD'),
+      icon: Icons.video_library_outlined, selectedIcon: Icons.video_library_rounded, label: 'Series'),
+  AdaptiveDestination(
+      icon: Icons.search_rounded, selectedIcon: Icons.search_rounded, label: 'Buscar'),
+  AdaptiveDestination(
+      icon: Icons.star_outline_rounded, selectedIcon: Icons.star_rounded, label: 'Favoritos'),
   AdaptiveDestination(
       icon: Icons.settings_outlined, selectedIcon: Icons.settings_rounded, label: 'Ajustes'),
 ];
@@ -43,10 +53,19 @@ class _HomePageState extends ConsumerState<HomePage> {
   /// Solo debug: `IPTV_AUTOLOAD=<ruta .m3u>` carga una lista y `IPTV_PLAY_NAME=<texto>`
   /// reproduce el primer canal que contenga ese texto.
   Future<void> _debugBootstrap() async {
-    final path = Platform.environment['IPTV_AUTOLOAD'];
-    if (path == null) return;
+    final env = Platform.environment;
+    final tab = int.tryParse(env['IPTV_TAB'] ?? '');
+    if (tab != null && mounted) setState(() => _index = tab);
+    final xtream = env['IPTV_XTREAM']?.split('|'); // host|usuario|contraseña
+    final path = env['IPTV_AUTOLOAD'];
+    if (xtream == null && path == null) return;
     await ref.read(playlistProvider.future); // esperar al build() inicial
-    await ref.read(playlistProvider.notifier).loadFile(path);
+    if (xtream != null && xtream.length == 3) {
+      await ref.read(playlistProvider.notifier).loadXtream(
+          XtreamCredentials(host: xtream[0], username: xtream[1], password: xtream[2]));
+    } else if (path != null) {
+      await ref.read(playlistProvider.notifier).loadFile(path);
+    }
     final name = Platform.environment['IPTV_PLAY_NAME'];
     if (name == null || !mounted) return;
     final channels = ref.read(playlistProvider).valueOrNull?.channels ?? const [];
@@ -60,14 +79,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       destinations: _destinations,
       selectedIndex: _index,
       onSelected: (i) => setState(() => _index = i),
-      body: _index == 0
-          ? const _LiveTab()
-          : GlassCard(
-              child: Center(
-                child: Text(_destinations[_index].label,
-                    style: Theme.of(context).textTheme.titleLarge),
-              ),
-            ), // TODO: features restantes
+      body: switch (_index) {
+        0 => const _LiveTab(),
+        1 => const MediaPage(kind: MediaKind.movies),
+        2 => const MediaPage(kind: MediaKind.series),
+        3 => const SearchPage(),
+        5 => const SettingsPage(),
+        _ => GlassCard(
+            child: Center(
+              child: Text(_destinations[_index].label,
+                  style: Theme.of(context).textTheme.titleLarge),
+            ),
+          ), // TODO: favoritos
+      },
     );
   }
 }
@@ -85,17 +109,7 @@ class _LiveTab extends ConsumerWidget {
 
       if (type.isCompact) {
         return ChannelListPane(
-          onChannelTap: (channel) async {
-            await ref.read(playChannelProvider)(channel);
-            if (!context.mounted) return;
-            await Navigator.of(context).push(MaterialPageRoute<void>(
-              fullscreenDialog: true,
-              builder: (_) => const Scaffold(
-                backgroundColor: Colors.black,
-                body: SafeArea(child: PlayerView()),
-              ),
-            ));
-          },
+          onChannelTap: (channel) => openPlayer(context, ref, channel),
         );
       }
 

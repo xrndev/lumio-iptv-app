@@ -33,7 +33,12 @@ class GlassCard extends StatelessWidget {
             borderRadius: r,
             border: Border.all(color: s.outlineVariant.withValues(alpha: 0.6)),
           ),
-          child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+          // Material transparente: los InkWell/ListTile de dentro pintan su efecto
+          // sobre él y no quedan ocultos tras el fondo del DecoratedBox.
+          child: Material(
+            type: MaterialType.transparency,
+            child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+          ),
         ),
       ),
     );
