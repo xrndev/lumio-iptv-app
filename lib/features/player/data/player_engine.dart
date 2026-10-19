@@ -44,9 +44,12 @@ class PlaybackStatus {
 class PlayerEngine {
   PlayerEngine()
       : player = Player(
-          configuration: const PlayerConfiguration(
-            // Buffer de demuxer ampliado: 4K/HEVC a 15–25 Mbps necesita ~20–30 s de margen.
-            bufferSize: 64 * 1024 * 1024,
+          configuration: PlayerConfiguration(
+            // Buffer de demuxer ampliado: 4K/HEVC a 15–25 Mbps necesita ~20–30 s de margen en
+            // escritorio. En Android (móviles y, sobre todo, Fire Stick / Android TV con 1–2 GB
+            // de RAM compartida con el sistema) se reduce a la mitad para no ser cerrada por
+            // falta de memoria; sigue dando ~10–15 s a 15–25 Mbps.
+            bufferSize: (Platform.isAndroid ? 32 : 64) * 1024 * 1024,
             title: 'Lumio',
             logLevel: kDebugMode ? MPVLogLevel.v : MPVLogLevel.warn,
           ),
@@ -215,6 +218,8 @@ class PlayerEngine {
   }
 
   Future<void> togglePlay() => player.playOrPause();
+  Future<void> resume() => player.play();
+  Future<void> pause() => player.pause();
 
   Future<void> stop() async {
     _generation++;

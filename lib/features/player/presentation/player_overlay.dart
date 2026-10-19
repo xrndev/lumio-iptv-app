@@ -10,6 +10,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import '../../../design_system/theme/app_theme.dart';
 import '../data/player_engine.dart';
 import '../player_providers.dart';
+import 'remote_keys.dart';
 
 /// Controles superpuestos: play/pausa, volumen (slider, mute, rueda, ↑/↓),
 /// progreso y ±10 s (solo VOD), pistas de audio/subtítulos, relación de aspecto
@@ -81,6 +82,25 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
     final k = e.logicalKey;
     final wasHidden = !_visible;
     if (e is KeyDownEvent) _poke(); // cualquier tecla del mando muestra los controles
+    // Teclas multimedia del mando (Fire TV: ⏪ ⏯ ⏩). Funcionan estén donde esté el foco.
+    final media = mapMediaKey(k);
+    if (media != RemoteAction.none) {
+      switch (media) {
+        case RemoteAction.playPause:
+          if (e is KeyDownEvent) _engine.togglePlay();
+        case RemoteAction.play:
+          if (e is KeyDownEvent) _engine.resume();
+        case RemoteAction.pause:
+          if (e is KeyDownEvent) _engine.pause();
+        case RemoteAction.seekBack:
+          if (!_isLive) _skip(-remoteSeekSeconds);
+        case RemoteAction.seekForward:
+          if (!_isLive) _skip(remoteSeekSeconds);
+        case RemoteAction.none:
+          break;
+      }
+      return KeyEventResult.handled;
+    }
     // OK / Enter del mando: pausa o reanuda (la primera pulsación solo muestra los controles).
     // Solo con el foco en el propio overlay: si lo tiene un botón, OK debe activarlo.
     if (e is KeyDownEvent &&

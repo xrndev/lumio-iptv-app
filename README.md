@@ -35,7 +35,20 @@ No hace falta instalar nada más: cada paquete trae lo que necesita. Se generan 
 | Linux | `Lumio-linux-x64.tar.gz` | Descomprimir y ejecutar `./install.sh`. Instala solo las librerías que falten (libmpv, GTK, libsecret) con el gestor de paquetes (apt, dnf, pacman o zypper). |
 | macOS | `Lumio-macos.zip` | Descomprimir y arrastrar a Aplicaciones. App sin firmar: la primera vez, clic derecho → Abrir. |
 | Android | `Lumio-android.apk` | Abrir el APK en el dispositivo y permitir la instalación de orígenes desconocidos. |
+| Fire TV / Fire Stick | `Lumio-android.apk` (el mismo) | Ver "Fire TV" más abajo. Fire OS 6 o superior. |
 | iOS | — | Requiere cuenta de desarrollador de Apple para firmar e instalar; no se distribuye aún. |
+
+### Fire TV / Fire Stick
+
+Lumio funciona con el mando de Amazon: flechas y OK para navegar, **OK** pausa y reanuda, **⏪ ⏩** saltan 10 s en películas y series, **⏯** pausa y **Atrás** vuelve. El texto es algo mayor en TV y no se ofrece el selector de archivos (en TV no hay gestor de archivos): añade la lista por URL o con una cuenta Xtream Codes.
+
+Instalar desde el PC, con el Fire TV y el PC en la misma red:
+
+1. En el Fire TV: Ajustes → Mi Fire TV → Opciones para desarrolladores → activa **Depuración ADB** y **Aplicaciones de orígenes desconocidos**. (Si no sale ese menú: Ajustes → Mi Fire TV → Acerca de, y pulsa 7 veces sobre el nombre del dispositivo.)
+2. Apunta su IP: Ajustes → Mi Fire TV → Acerca de → Red.
+3. Ejecuta `./scripts/android/install-device.ps1 -Ip <IP del Fire TV>` y acepta el aviso de depuración que sale en el televisor.
+
+Requisitos: Fire OS 6 (Android 7.1) o superior, es decir, Fire TV Stick de 3.ª generación, Lite, 4K, 4K Max y Fire TV Cube recientes. Los Fire Stick de 1.ª y 2.ª generación (Fire OS 5) no son compatibles. **Sin probar en un Fire Stick real** (ver `CLAUDE.md`).
 
 Qué se ha verificado de verdad:
 

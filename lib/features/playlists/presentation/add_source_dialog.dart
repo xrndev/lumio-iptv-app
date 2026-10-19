@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/xtream_client.dart';
+import '../../../platform_channels/tv_provider.dart';
 import '../playlist_providers.dart';
 
 Future<void> showAddSourceDialog(BuildContext context) =>
@@ -66,8 +67,10 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // En TV (mando, sin gestor de archivos) no se ofrece "Archivo".
+    final tv = ref.watch(isTelevisionProvider).valueOrNull ?? false;
     return DefaultTabController(
-      length: 3,
+      length: tv ? 2 : 3,
       child: AlertDialog(
         title: const Text('Añadir fuente'),
         content: SizedBox(
@@ -75,10 +78,10 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
           height: 340,
           child: Column(
             children: [
-              const TabBar(tabs: [
-                Tab(text: 'URL M3U'),
-                Tab(text: 'Archivo'),
-                Tab(text: 'Xtream Codes'),
+              TabBar(tabs: [
+                const Tab(text: 'URL M3U'),
+                if (!tv) const Tab(text: 'Archivo'),
+                const Tab(text: 'Xtream Codes'),
               ]),
               const SizedBox(height: 16),
               Expanded(
@@ -87,36 +90,45 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
                     TextField(
                       controller: _url,
                       keyboardType: TextInputType.url,
+                      textInputAction: TextInputAction.done,
                       decoration: const InputDecoration(
                           labelText: 'URL de la lista', border: OutlineInputBorder()),
                       onSubmitted: (_) => _submitUrl(),
                     ),
                     FilledButton(onPressed: _submitUrl, child: const Text('Añadir lista')),
                   ]),
+                  if (!tv)
+                    _Pane(children: [
+                      const Text('Selecciona un archivo .m3u / .m3u8 de tu equipo.'),
+                      FilledButton.icon(
+                        icon: const Icon(Icons.folder_open),
+                        label: const Text('Elegir archivo'),
+                        onPressed: _pickFile,
+                      ),
+                    ]),
                   _Pane(children: [
-                    const Text('Selecciona un archivo .m3u / .m3u8 de tu equipo.'),
-                    FilledButton.icon(
-                      icon: const Icon(Icons.folder_open),
-                      label: const Text('Elegir archivo'),
-                      onPressed: _pickFile,
-                    ),
-                  ]),
-                  _Pane(children: [
+                    // textInputAction: con el mando, "Siguiente" en el teclado de pantalla
+                    // pasa al campo siguiente y "Listo" envía el formulario.
                     TextField(
                       controller: _host,
                       keyboardType: TextInputType.url,
+                      textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                           labelText: 'Servidor (http://host:puerto)',
                           border: OutlineInputBorder()),
                     ),
                     TextField(
                       controller: _user,
+                      textInputAction: TextInputAction.next,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       decoration: const InputDecoration(
                           labelText: 'Usuario', border: OutlineInputBorder()),
                     ),
                     TextField(
                       controller: _pass,
                       obscureText: true,
+                      textInputAction: TextInputAction.done,
                       decoration: const InputDecoration(
                           labelText: 'Contraseña', border: OutlineInputBorder()),
                       onSubmitted: (_) => _submitXtream(),
