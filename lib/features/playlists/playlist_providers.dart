@@ -18,9 +18,15 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
   @override
   Future<M3uPlaylist?> build() async => null;
 
-  Future<void> loadUrl(String url) async {
-    ref.read(xtreamAccountProvider.notifier).state = null;
+  void _beginLoad({bool keepAccount = false}) {
+    if (!keepAccount) ref.read(xtreamAccountProvider.notifier).state = null;
+    ref.read(selectedGroupProvider.notifier).state = null;
+    ref.read(channelSearchProvider.notifier).state = '';
     state = const AsyncLoading();
+  }
+
+  Future<void> loadUrl(String url) async {
+    _beginLoad();
     state = await AsyncValue.guard(() async {
       final file = await ref.read(playlistDownloaderProvider).download(url);
       return M3uParser.parseFile(file.path);
@@ -28,7 +34,7 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
   }
 
   Future<void> loadXtream(XtreamCredentials creds) async {
-    state = const AsyncLoading();
+    _beginLoad(keepAccount: true);
     state = await AsyncValue.guard(() async {
       final r = await ref.read(xtreamClientProvider).loadLive(creds);
       ref.read(xtreamAccountProvider.notifier).state = r.account;
@@ -37,8 +43,7 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
   }
 
   Future<void> loadFile(String path) async {
-    ref.read(xtreamAccountProvider.notifier).state = null;
-    state = const AsyncLoading();
+    _beginLoad();
     state = await AsyncValue.guard(() async {
       if (!await File(path).exists()) throw FileSystemException('No existe', path);
       return M3uParser.parseFile(path);
@@ -52,9 +57,21 @@ final playlistProvider =
 /// Filtro de búsqueda en memoria. TODO: sustituir por FTS5 (drift) para 50k+.
 final channelSearchProvider = StateProvider<String>((ref) => '');
 
+/// Categoría seleccionada (`null` = todas).
+final selectedGroupProvider = StateProvider<String?>((ref) => null);
+
+/// Grupos de la lista activa, en orden de aparición.
+final groupsProvider = Provider<List<String>>((ref) {
+  final all = ref.watch(playlistProvider).valueOrNull?.channels ?? const <Channel>[];
+  return {for (final c in all) if (c.group.isNotEmpty) c.group}.toList(growable: false);
+});
+
 final visibleChannelsProvider = Provider<List<Channel>>((ref) {
   final all = ref.watch(playlistProvider).valueOrNull?.channels ?? const <Channel>[];
   final q = ref.watch(channelSearchProvider).trim().toLowerCase();
-  if (q.isEmpty) return all;
-  return all.where((c) => c.name.toLowerCase().contains(q)).toList(growable: false);
+  final group = ref.watch(selectedGroupProvider);
+  if (q.isEmpty && group == null) return all;
+  return all
+      .where((c) => (group == null || c.group == group) && (q.isEmpty || c.name.toLowerCase().contains(q)))
+      .toList(growable: false);
 });

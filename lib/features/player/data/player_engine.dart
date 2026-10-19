@@ -84,7 +84,24 @@ class PlayerEngine {
   }
 
   Future<void> togglePlay() => player.playOrPause();
-  Future<void> setVolume(double percent) => player.setVolume(percent.clamp(0, 100));
+
+  // --- Volumen (0–100) ------------------------------------------------------
+  double _preMuteVolume = 100;
+  double get volume => player.state.volume;
+  Stream<double> get volumeStream => player.stream.volume;
+  bool get isMuted => player.state.volume == 0;
+
+  Future<void> setVolume(double percent) => player.setVolume(percent.clamp(0, 100).toDouble());
+  Future<void> changeVolume(double delta) => setVolume(volume + delta);
+
+  Future<void> toggleMute() async {
+    if (isMuted) {
+      await setVolume(_preMuteVolume > 0 ? _preMuteVolume : 50);
+    } else {
+      _preMuteVolume = volume;
+      await setVolume(0);
+    }
+  }
 
   // --- Pistas ---------------------------------------------------------------
   Stream<Tracks> get tracksStream => player.stream.tracks;

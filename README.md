@@ -10,7 +10,9 @@ Reproductor IPTV hecho con Flutter: una sola base de código para Android, iOS, 
 - Parser M3U en streaming dentro de un Isolate: 50.000 canales en ~370 ms y ~11 MB de memoria (modo JIT).
 - Reproducción con [`media_kit`](https://github.com/media-kit/media-kit) (libmpv) y aceleración por hardware. Probado con HLS H.264.
 - Interfaz adaptativa según el ancho de ventana: barra inferior (< 600 dp), rail lateral (600–839 dp) y sidebar con vista dividida lista + reproductor (≥ 840 dp).
-- Búsqueda de canales, selector de relación de aspecto y logos.
+- Búsqueda de canales, filtro por categorías, selector de relación de aspecto y logos.
+- Controles del reproductor: volumen (slider, silencio, rueda del ratón), pantalla completa y atajos de teclado: `Espacio` pausa, `M` silencio, `↑`/`↓` volumen, `F` pantalla completa, `Esc` salir.
+- Diseño moderno con tarjetas de cristal. El diseño anterior sigue disponible en la rama/etiqueta `design-v1-classic`.
 
 ## Pendiente
 

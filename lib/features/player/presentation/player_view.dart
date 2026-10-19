@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
-import '../data/player_engine.dart';
+import '../../../design_system/theme/app_theme.dart';
 import '../player_providers.dart';
+import 'player_overlay.dart';
 
-/// Superficie de vídeo con controles mínimos accesibles.
+/// Superficie de vídeo. Los controles se pasan como `controls` de [Video] para
+/// que también existan en pantalla completa.
 class PlayerView extends ConsumerWidget {
   const PlayerView({super.key});
 
@@ -21,72 +23,42 @@ class PlayerView extends ConsumerWidget {
         children: [
           Semantics(
             label: channel == null ? 'Reproductor sin canal' : 'Reproduciendo ${channel.name}',
-            child: Video(controller: engine.video, controls: null),
-          ),
-          if (channel == null)
-            const Center(
-              child: Text('Selecciona un canal', style: TextStyle(color: Colors.white70)),
+            child: Video(
+              controller: engine.video,
+              controls: (state) => PlayerOverlay(state: state),
             ),
-          Positioned(
-            left: 8,
-            right: 8,
-            bottom: 8,
-            child: _Controls(engine: engine, title: channel?.name ?? ''),
           ),
+          if (channel == null) const IgnorePointer(child: _EmptyPlayer()),
         ],
       ),
     );
   }
 }
 
-class _Controls extends StatelessWidget {
-  const _Controls({required this.engine, required this.title});
-
-  final PlayerEngine engine;
-  final String title;
+class _EmptyPlayer extends StatelessWidget {
+  const _EmptyPlayer();
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Colors.black45,
-        borderRadius: BorderRadius.circular(16),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF12151F), Color(0xFF0A0C12)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            StreamBuilder<bool>(
-              stream: engine.player.stream.playing,
-              initialData: engine.player.state.playing,
-              builder: (context, snap) {
-                final playing = snap.data ?? false;
-                return IconButton(
-                  // 48dp mínimo de zona táctil.
-                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                  tooltip: playing ? 'Pausar' : 'Reproducir',
-                  color: Colors.white,
-                  icon: Icon(playing ? Icons.pause : Icons.play_arrow),
-                  onPressed: engine.togglePlay,
-                );
-              },
+            ShaderMask(
+              shaderCallback: (r) => AppColors.accentGradient.createShader(r),
+              child: const Icon(Icons.live_tv_rounded, size: 56, color: Colors.white),
             ),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-            PopupMenuButton<AspectMode>(
-              tooltip: 'Relación de aspecto',
-              icon: const Icon(Icons.aspect_ratio, color: Colors.white),
-              onSelected: engine.setAspect,
-              itemBuilder: (_) => [
-                for (final m in AspectMode.values) PopupMenuItem(value: m, child: Text(m.label)),
-              ],
-            ),
+            const SizedBox(height: 12),
+            const Text('Selecciona un canal',
+                style: TextStyle(color: Colors.white70, fontSize: 16)),
           ],
         ),
       ),
