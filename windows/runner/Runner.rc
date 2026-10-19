@@ -95,7 +95,9 @@ BEGIN
             VALUE "InternalName", "iptv_launcher" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.iptvlauncher. All rights reserved." "\0"
             VALUE "OriginalFilename", "iptv_launcher.exe" "\0"
-            VALUE "ProductName", "IPTV Launcher" "\0"
+            // NO cambiar: Flutter deriva de CompanyName/ProductName la carpeta de datos
+            // (%APPDATA%\com.iptvlauncher\iptv_launcher) donde se guarda la fuente cifrada.
+            VALUE "ProductName", "iptv_launcher" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
