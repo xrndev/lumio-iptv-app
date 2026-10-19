@@ -1,11 +1,13 @@
-import '../epg/epg.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:dio/dio.dart';
 
+import '../epg/epg.dart';
 import '../models/channel.dart';
 import '../models/media.dart';
+import '../util/stable_hash.dart';
 
 class XtreamCredentials {
   XtreamCredentials({required String host, required this.username, required this.password})
@@ -64,7 +66,7 @@ class XtreamLoadResult {
 
 /// Cliente de la API `player_api.php` de Xtream Codes (solo Live por ahora).
 class XtreamClient {
-  XtreamClient([Dio? dio])
+  XtreamClient([Dio? dio, this._cacheDir])
       : _dio = dio ??
             Dio(BaseOptions(
               connectTimeout: const Duration(seconds: 15),
@@ -74,8 +76,11 @@ class XtreamClient {
             ));
 
   final Dio _dio;
+  final Future<Directory> Function()? _cacheDir;
 
-  Future<XtreamLoadResult> loadLive(XtreamCredentials c) async {
+  /// [fresh] ignora la caché (acción explícita del usuario: añadir o recargar la cuenta).
+  Future<XtreamLoadResult> loadLive(XtreamCredentials c, {bool fresh = false}) async {
+    final ttl = fresh ? Duration.zero : const Duration(hours: 6);
     final info = await _get(c, null);
     final userInfo = (await Isolate.run(() => jsonDecode(info)) as Map)['user_info'];
     if (userInfo is! Map) {
@@ -84,8 +89,8 @@ class XtreamClient {
     final account = XtreamAccount.fromJson(userInfo.cast<String, dynamic>());
     if (!account.isActive) throw StateError('Cuenta no activa (${account.status})');
 
-    final cats = await _get(c, 'get_live_categories');
-    final streams = await _get(c, 'get_live_streams');
+    final cats = await _getCached(c, 'get_live_categories', ttl: ttl);
+    final streams = await _getCached(c, 'get_live_streams', ttl: ttl);
     final playlist = await Isolate.run(() => parseLive(streams, cats, c));
     return XtreamLoadResult(account, playlist);
   }
@@ -93,14 +98,14 @@ class XtreamClient {
   // --- VOD y series ---------------------------------------------------------
 
   Future<MediaCatalog> loadMovies(XtreamCredentials c) async {
-    final cats = await _get(c, 'get_vod_categories');
-    final items = await _get(c, 'get_vod_streams');
+    final cats = await _getCached(c, 'get_vod_categories');
+    final items = await _getCached(c, 'get_vod_streams');
     return Isolate.run(() => parseMovies(items, cats));
   }
 
   Future<MediaCatalog> loadSeries(XtreamCredentials c) async {
-    final cats = await _get(c, 'get_series_categories');
-    final items = await _get(c, 'get_series');
+    final cats = await _getCached(c, 'get_series_categories');
+    final items = await _getCached(c, 'get_series');
     return Isolate.run(() => parseSeries(items, cats));
   }
 
@@ -275,6 +280,45 @@ class XtreamClient {
       cast: _s(info['cast']),
       backdrop: backdrop is List && backdrop.isNotEmpty ? _s(backdrop.first) : '',
     );
+  }
+
+  /// Como [_get] pero con caché en disco (gzip): las listas grandes tardan segundos en
+  /// bajar, así que se reutilizan [ttl] y, si la red falla, se usa la copia aunque sea vieja.
+  Future<String> _getCached(XtreamCredentials c, String action,
+      {Duration ttl = const Duration(hours: 6)}) async {
+    final dirFn = _cacheDir;
+    if (dirFn == null) return _get(c, action);
+    File? file;
+    try {
+      final dir = await dirFn();
+      file = File('${dir.path}${Platform.pathSeparator}xtream_${stableHash('${c.host}|${c.username}')}_$action.gz');
+    } catch (_) {
+      return _get(c, action);
+    }
+    String? stale;
+    try {
+      if (await file.exists()) {
+        final text = utf8.decode(gzip.decode(await file.readAsBytes()));
+        if (DateTime.now().difference(await file.lastModified()) < ttl) return text;
+        stale = text;
+      }
+    } catch (_) {
+      // caché ilegible: se ignora y se vuelve a descargar
+    }
+    try {
+      final body = await _get(c, action);
+      try {
+        final tmp = File('${file.path}.tmp');
+        await tmp.writeAsBytes(gzip.encode(utf8.encode(body)), flush: true);
+        await tmp.rename(file.path);
+      } catch (_) {
+        // guardar la caché es un extra
+      }
+      return body;
+    } catch (_) {
+      if (stale != null) return stale;
+      rethrow;
+    }
   }
 
   Future<String> _get(XtreamCredentials c, String? action,

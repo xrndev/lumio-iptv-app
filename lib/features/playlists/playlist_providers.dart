@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/epg/epg.dart';
 import '../../core/models/channel.dart';
@@ -14,7 +15,8 @@ import '../../core/parsing/m3u_parser.dart';
 import '../../core/storage/source_store.dart';
 
 final playlistDownloaderProvider = Provider((ref) => PlaylistDownloader());
-final xtreamClientProvider = Provider((ref) => XtreamClient());
+/// Con caché de listas en disco para que la app abra al instante.
+final xtreamClientProvider = Provider((ref) => XtreamClient(null, getApplicationCacheDirectory));
 
 /// Datos de la cuenta Xtream activa (estado y caducidad), si la fuente es Xtream.
 final xtreamAccountProvider = StateProvider<XtreamAccount?>((ref) => null);
@@ -94,7 +96,7 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
     }
   }
 
-  Future<_Opened> _open(SavedSource s) async {
+  Future<_Opened> _open(SavedSource s, {bool fresh = false}) async {
     switch (s.type) {
       case SourceType.url:
         final file = await ref.read(playlistDownloaderProvider).download(s.location);
@@ -107,7 +109,7 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
       case SourceType.xtream:
         final creds =
             XtreamCredentials(host: s.location, username: s.username, password: s.password);
-        final r = await ref.read(xtreamClientProvider).loadLive(creds);
+        final r = await ref.read(xtreamClientProvider).loadLive(creds, fresh: fresh);
         return _Opened(r.playlist, account: r.account, creds: creds);
     }
   }
@@ -134,10 +136,11 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
   /// Abre [source] y, solo si funciona, la guarda (una fuente nueva que falla no
   /// borra la anterior).
   Future<void> _activate(SavedSource source) async {
+    // Acción del usuario: siempre datos recientes (el arranque, en cambio, usa la caché).
     _reset();
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      final opened = await _open(source);
+      final opened = await _open(source, fresh: true);
       await _persist(ref.read(sourceStoreProvider), source);
       _apply(source, opened);
       return opened.playlist;
