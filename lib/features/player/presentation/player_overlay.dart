@@ -375,8 +375,18 @@ class _BottomBar extends StatelessWidget {
   final ValueChanged<int> onSkip;
   final ValueChanged<double> onVolume;
 
+  /// Por debajo de este ancho no caben slider de volumen + 7 botones (móvil vertical).
+  static const _compactWidth = 540.0;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final compact = constraints.maxWidth < _compactWidth;
+      return _buildBar(context, compact);
+    });
+  }
+
+  Widget _buildBar(BuildContext context, bool compact) {
     return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -435,26 +445,30 @@ class _BottomBar extends StatelessWidget {
                           tooltip: v == 0 ? 'Activar sonido (M)' : 'Silenciar (M)',
                           onPressed: onMute,
                         ),
-                        SizedBox(
-                          width: 110,
-                          child: SliderTheme(
-                            data: SliderTheme.of(context).copyWith(
-                              activeTrackColor: AppColors.cyan,
-                              inactiveTrackColor: Colors.white24,
-                              thumbColor: Colors.white,
-                            ),
-                            child: Semantics(
-                              label: 'Volumen',
-                              value: '${v.round()}%',
-                              child: Slider(value: v, min: 0, max: 100, onChanged: onVolume),
+                        // En pantallas estrechas solo queda el botón de silencio: el volumen
+                        // se maneja con las teclas físicas del dispositivo.
+                        if (!compact) ...[
+                          SizedBox(
+                            width: 110,
+                            child: SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: AppColors.cyan,
+                                inactiveTrackColor: Colors.white24,
+                                thumbColor: Colors.white,
+                              ),
+                              child: Semantics(
+                                label: 'Volumen',
+                                value: '${v.round()}%',
+                                child: Slider(value: v, min: 0, max: 100, onChanged: onVolume),
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(
-                          width: 38,
-                          child: Text('${v.round()}%',
-                              style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                        ),
+                          SizedBox(
+                            width: 38,
+                            child: Text('${v.round()}%',
+                                style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                          ),
+                        ],
                       ],
                     );
                   },
