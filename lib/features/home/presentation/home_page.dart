@@ -23,6 +23,7 @@ import '../../library/library_providers.dart';
 import '../../library/progress_tracker.dart';
 import 'channel_list_pane.dart';
 import 'favorites_page.dart';
+import 'recents_page.dart';
 import 'search_page.dart';
 
 const _destinations = [
@@ -36,6 +37,7 @@ const _destinations = [
       icon: Icons.search_rounded, selectedIcon: Icons.search_rounded, label: 'Buscar'),
   AdaptiveDestination(
       icon: Icons.star_outline_rounded, selectedIcon: Icons.star_rounded, label: 'Favoritos'),
+AdaptiveDestination(      icon: Icons.history_rounded, selectedIcon: Icons.history_rounded, label: 'Recientes'),
   AdaptiveDestination(
       icon: Icons.settings_outlined, selectedIcon: Icons.settings_rounded, label: 'Ajustes'),
 ];
@@ -137,6 +139,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         2 => const MediaPage(kind: MediaKind.series),
         3 => const SearchPage(),
         4 => const FavoritesPage(),
+        5 => const RecentsPage(),
         _ => const SettingsPage(),
       },
     );

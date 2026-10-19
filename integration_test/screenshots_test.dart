@@ -16,6 +16,8 @@ import 'package:lumio/app.dart';
 import 'package:lumio/core/models/media.dart';
 import 'package:lumio/core/network/xtream_client.dart';
 import 'package:lumio/core/storage/source_store.dart';
+import 'package:lumio/core/library/library_data.dart';
+import 'package:lumio/features/library/library_providers.dart';
 import 'package:lumio/features/playlists/playlist_providers.dart';
 import 'package:lumio/features/vod/vod_providers.dart';
 import 'package:media_kit/media_kit.dart';
@@ -83,6 +85,8 @@ void main() {
 
     final container = ProviderContainer(overrides: [
       sourceStoreProvider.overrideWithValue(MemorySourceStore()),
+      // Biblioteca en un fichero temporal: nunca se toca la del usuario.
+      libraryFileProvider.overrideWithValue(() async => File('${tmp.path}/biblioteca.json')),
       xtreamCredentialsProvider.overrideWith((ref) => XtreamCredentials(host: 'srv.example', username: 'u', password: 'p')),
       mediaCatalogProvider.overrideWith((ref, kind) async => kind == MediaKind.movies ? _movies() : _movies()),
     ]);
@@ -117,6 +121,26 @@ void main() {
     container.read(xtreamCredentialsProvider.notifier).state =
         XtreamCredentials(host: 'srv.example', username: 'u', password: 'p');
     await shot('1_en_vivo');
+
+    // Biblioteca de ejemplo: dos favoritos y tres canales recientes.
+    final channels = container.read(channelsByUidProvider);
+    String uidOf(String name) => channels.values.firstWhere((c) => c.name.contains(name)).uid;
+    await t.runAsync(() async {
+      final lib = container.read(libraryProvider.notifier);
+      await container.read(libraryProvider.future);
+      await lib.toggleFavorite(LibraryKind.channel, uidOf('La 1'));
+      await lib.toggleFavorite(LibraryKind.channel, uidOf('Movistar LaLiga'));
+      for (final n in ['National Geographic', 'DAZN', 'La Sexta']) {
+        await lib.addRecent(uidOf(n));
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+    });
+    await t.pump();
+    await t.tap(find.text('Favoritos').last);
+    await shot('6_favoritos');
+    await t.tap(find.text('Recientes').last);
+    await shot('7_recientes');
+    await t.tap(find.text('En vivo').last);
 
     await t.tap(find.text('Películas').last);
     await shot('2_peliculas');

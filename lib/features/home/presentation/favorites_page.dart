@@ -5,7 +5,6 @@ import '../../../core/library/library_data.dart';
 import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
 import '../../../core/network/xtream_client.dart';
-import '../../../core/util/channel_names.dart';
 import '../../../design_system/widgets/cached_logo.dart';
 import '../../../design_system/widgets/focus_ring.dart';
 import '../../../design_system/widgets/glass_card.dart';
@@ -35,10 +34,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     final lib = ref.watch(currentLibraryProvider);
     final channels = ref.watch(channelsByUidProvider);
     final cont = lib.continueWatching();
-    final recents = [
-      for (final uid in lib.recentUids().take(12))
-        if (channels[uid] != null) channels[uid]!,
-    ];
 
     return GlassCard(
       child: CustomScrollView(
@@ -51,16 +46,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                 height: 292,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [for (final e in cont) _ContinueCard(entry: e)],
-              ),
-            ),
-          ],
-          if (recents.isNotEmpty) ...[
-            const SliverToBoxAdapter(child: _SectionTitle('Canales recientes')),
-            SliverToBoxAdapter(
-              child: WheelScrollRow(
-                height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [for (final c in recents) _RecentChip(channel: c)],
               ),
             ),
           ],
@@ -211,52 +196,6 @@ class _Empty extends StatelessWidget {
           ),
         ),
       );
-}
-
-/// Canal visto hace poco: logo y nombre, un toque para volver a verlo.
-class _RecentChip extends ConsumerWidget {
-  const _RecentChip({required this.channel});
-  final Channel channel;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final s = Theme.of(context).colorScheme;
-    final name = parseChannelName(channel.name).title;
-    return Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: FocusRing(
-        radius: 16,
-        child: Material(
-          color: s.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => openPlayer(context, ref, channel),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 8),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CachedImage(
-                    url: channel.logo,
-                    fit: BoxFit.contain,
-                    cacheWidth: 80,
-                    fallback: Icon(Icons.tv_rounded, color: s.onSurfaceVariant),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 150),
-                  child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
-                ),
-              ]),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Tarjeta de "Continuar viendo": póster con barra de progreso y botón para quitarla.
