@@ -3,6 +3,7 @@ import 'package:lumio/core/util/channel_names.dart';
 import 'package:lumio/core/util/stable_hash.dart';
 
 void main() {
+  searchFoldTests();
   group('parseChannelName (nombres reales de proveedores)', () {
     void expectName(String raw, String title, {String? quality, bool hevc = false}) {
       final n = parseChannelName(raw);
@@ -75,5 +76,12 @@ void main() {
       expect(stableHash(''), '811c9dc59747b28c');
       expect(stableHash('lumio'), stableHash('lumio'));
     });
+  });
+}
+
+void searchFoldTests() {
+  test('foldForSearch ignora tildes y mayúsculas', () {
+    expect(foldForSearch('Películas ÑANDÚ'), 'peliculas nandu');
+    expect(foldForSearch('La 1 HD'), 'la 1 hd');
   });
 }

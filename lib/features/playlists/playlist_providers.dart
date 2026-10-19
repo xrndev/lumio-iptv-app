@@ -5,8 +5,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/epg/epg.dart';
 import '../../core/models/channel.dart';
 import '../../core/network/playlist_downloader.dart';
+import '../../core/util/channel_names.dart';
 import '../../core/network/xtream_client.dart';
 import '../../core/parsing/m3u_parser.dart';
 import '../../core/storage/source_store.dart';
@@ -177,11 +179,11 @@ final groupsProvider = Provider<List<String>>((ref) {
 
 final visibleChannelsProvider = Provider<List<Channel>>((ref) {
   final all = ref.watch(playlistProvider).valueOrNull?.channels ?? const <Channel>[];
-  final q = ref.watch(channelSearchProvider).trim().toLowerCase();
+  final q = foldForSearch(ref.watch(channelSearchProvider).trim());
   final group = ref.watch(selectedGroupProvider);
   if (q.isEmpty && group == null) return all;
   return all
-      .where((c) => (group == null || c.group == group) && (q.isEmpty || c.name.toLowerCase().contains(q)))
+      .where((c) => (group == null || c.group == group) && (q.isEmpty || foldForSearch(c.name).contains(q)))
       .toList(growable: false);
 });
 
@@ -191,3 +193,19 @@ final channelsByUidProvider = Provider<Map<String, Channel>>((ref) {
   final channels = ref.watch(playlistProvider).valueOrNull?.channels ?? const <Channel>[];
   return {for (final c in channels) c.uid: c};
 });
+
+/// Guía del canal en directo `x<stream_id>`; se refresca cada 5 minutos. Vacía si no hay.
+final channelEpgProvider = FutureProvider.family<NowNext, String>((ref, uid) async {
+  final creds = ref.watch(xtreamCredentialsProvider);
+  final id = uid.startsWith('x') ? int.tryParse(uid.substring(1)) : null;
+  if (creds == null || id == null) return const NowNext(null, null);
+  final link = ref.keepAlive();
+  Timer(const Duration(minutes: 5), link.close);
+  try {
+    final programs = await ref.watch(xtreamClientProvider).shortEpg(creds, id);
+    return nowNext(programs, DateTime.now());
+  } catch (_) {
+    return const NowNext(null, null);
+  }
+});
+

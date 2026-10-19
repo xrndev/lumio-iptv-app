@@ -8,6 +8,8 @@ import 'package:media_kit/media_kit.dart' show AudioTrack, SubtitleTrack, Tracks
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../core/library/library_data.dart';
+import '../../../core/network/xtream_client.dart';
+import '../../playlists/playlist_providers.dart';
 import '../../../core/util/channel_names.dart';
 import '../../../design_system/theme/app_theme.dart';
 import '../../library/presentation/favorite_button.dart';
@@ -181,6 +183,7 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
                       subtitle: channel == null
                           ? ''
                           : (live ? prettyGroupName(channel.group) : channel.group),
+                      epgUid: (channel != null && live) ? channel.uid : null,
                       // Estrella para guardar el canal en favoritos desde el propio reproductor.
                       trailing: (channel != null && live)
                           ? FavoriteButton(
@@ -272,6 +275,16 @@ class _StatusLayer extends StatelessWidget {
                             textAlign: TextAlign.center,
                             style: const TextStyle(color: Colors.white54, fontSize: 12)),
                       ],
+                      Consumer(builder: (context, ref, _) {
+                        final hint = connectionHint(ref.watch(xtreamAccountProvider));
+                        if (hint == null) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(hint,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                        );
+                      }),
                       const SizedBox(height: 14),
                       FilledButton.icon(
                         icon: const Icon(Icons.refresh_rounded),
@@ -328,6 +341,43 @@ class _Fade extends StatelessWidget {
       );
 }
 
+/// "Ahora: … · Después: …" del canal en directo, si el proveedor tiene guía.
+class _EpgLine extends ConsumerWidget {
+  const _EpgLine({required this.uid});
+  final String uid;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nn = ref.watch(channelEpgProvider(uid)).valueOrNull;
+    final now = nn?.now;
+    if (nn == null || now == null) return const SizedBox.shrink();
+    final next = nn.next;
+    final t = DateTime.now();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Ahora: ${now.title}${next == null ? '' : '  ·  Después: ${next.title}'}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontSize: 12)),
+        const SizedBox(height: 4),
+        SizedBox(
+          width: 160,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: now.progress(t),
+              minHeight: 3,
+              backgroundColor: Colors.white24,
+              semanticsLabel: 'Progreso del programa',
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.title,
@@ -335,6 +385,7 @@ class _TopBar extends StatelessWidget {
     required this.live,
     this.onBack,
     this.trailing,
+    this.epgUid,
   });
 
   final String title;
@@ -344,6 +395,9 @@ class _TopBar extends StatelessWidget {
 
   /// Widget al final de la barra (p. ej. la estrella de favoritos).
   final Widget? trailing;
+
+  /// Si se indica, muestra la guía (ahora/después) de ese canal.
+  final String? epgUid;
 
   @override
   Widget build(BuildContext context) {
@@ -397,6 +451,7 @@ class _TopBar extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  if (epgUid != null) _EpgLine(uid: epgUid!),
                 ],
               ),
             ),

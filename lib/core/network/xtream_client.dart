@@ -1,3 +1,4 @@
+import '../epg/epg.dart';
 import 'dart:convert';
 import 'dart:isolate';
 
@@ -106,6 +107,12 @@ class XtreamClient {
   Future<VodDetail> vodInfo(XtreamCredentials c, int id) async {
     final body = await _get(c, 'get_vod_info', {'vod_id': '$id'});
     return Isolate.run(() => parseVodInfo(body));
+  }
+
+  /// Guía corta (programa actual y siguientes) de un canal en directo.
+  Future<List<EpgProgram>> shortEpg(XtreamCredentials c, int streamId) async {
+    final body = await _get(c, 'get_short_epg', {'stream_id': '$streamId', 'limit': '4'});
+    return parseShortEpg(body);
   }
 
   Future<SeriesDetail> seriesInfo(XtreamCredentials c, int id) async {
@@ -327,4 +334,27 @@ class XtreamClient {
       skippedLines: skipped,
     );
   }
+}
+
+/// Aviso sobre la cuenta que conviene enseñar al usuario, o `null` si todo va bien.
+/// Lógica pura (recibe la hora) para poder testearla.
+String? accountNotice(XtreamAccount a, DateTime now) {
+  if (!a.isActive) return 'Tu cuenta no está activa (${a.status}). Contacta con tu proveedor.';
+  final exp = a.expiry;
+  if (exp != null) {
+    if (exp.isBefore(now)) return 'Tu suscripción ha caducado. Renueva con tu proveedor.';
+    final days = exp.difference(now).inDays;
+    if (days <= 7) {
+      return days == 0
+          ? 'Tu suscripción caduca hoy.'
+          : 'Tu suscripción caduca en $days ${days == 1 ? 'día' : 'días'}.';
+    }
+  }
+  return null;
+}
+
+/// Pista cuando un canal falla y la cuenta solo permite una conexión.
+String? connectionHint(XtreamAccount? a) {
+  if (a == null || a.maxConnections == null || a.maxConnections! > 1) return null;
+  return 'Tu cuenta permite 1 sola conexión: si la usas en otro dispositivo, este canal puede no abrirse.';
 }

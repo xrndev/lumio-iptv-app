@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/channel.dart';
 import '../../core/models/media.dart';
+import '../../core/util/channel_names.dart';
 import '../playlists/playlist_providers.dart';
 
 /// Catálogo completo por tipo. `null` si la fuente activa no es Xtream.
@@ -18,11 +19,11 @@ final mediaGroupProvider = StateProvider.family<String?, MediaKind>((ref, kind) 
 
 final visibleMediaProvider = Provider.family<List<MediaEntry>, MediaKind>((ref, kind) {
   final all = ref.watch(mediaCatalogProvider(kind)).valueOrNull?.items ?? const <MediaEntry>[];
-  final q = ref.watch(mediaSearchProvider(kind)).trim().toLowerCase();
+  final q = foldForSearch(ref.watch(mediaSearchProvider(kind)).trim());
   final group = ref.watch(mediaGroupProvider(kind));
   if (q.isEmpty && group == null) return all;
   return all
-      .where((m) => (group == null || m.group == group) && (q.isEmpty || m.title.toLowerCase().contains(q)))
+      .where((m) => (group == null || m.group == group) && (q.isEmpty || foldForSearch(m.title).contains(q)))
       .toList(growable: false);
 });
 
@@ -53,10 +54,10 @@ class GlobalResults {
 const globalResultLimit = 40;
 
 final globalResultsProvider = Provider<GlobalResults>((ref) {
-  final q = ref.watch(globalSearchProvider).trim().toLowerCase();
+  final q = foldForSearch(ref.watch(globalSearchProvider).trim());
   if (q.length < 2) return const GlobalResults();
 
-  bool hit(String s) => s.toLowerCase().contains(q);
+  bool hit(String s) => foldForSearch(s).contains(q);
   final channels = ref.watch(playlistProvider).valueOrNull?.channels ?? const <Channel>[];
   final movies = ref.watch(mediaCatalogProvider(MediaKind.movies)).valueOrNull?.items ?? const <MediaEntry>[];
   final series = ref.watch(mediaCatalogProvider(MediaKind.series)).valueOrNull?.items ?? const <MediaEntry>[];

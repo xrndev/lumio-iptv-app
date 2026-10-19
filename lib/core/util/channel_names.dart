@@ -77,3 +77,17 @@ String _titleCase(String s) => s.split(' ').map((w) {
 
 String _capitalize(String w) =>
     w.isEmpty ? w : w[0].toUpperCase() + w.substring(1).toLowerCase();
+
+const _fromAccents = 'áàäâãéèëêíìïîóòöôõúùüûñç';
+const _toAccents = 'aaaaaeeeeiiiiooooouuuunc';
+
+/// Minúsculas y sin tildes: para que "peliculas" encuentre "Películas".
+String foldForSearch(String s) {
+  final b = StringBuffer();
+  for (final r in s.toLowerCase().runes) {
+    final ch = String.fromCharCode(r);
+    final i = _fromAccents.indexOf(ch);
+    b.write(i < 0 ? ch : _toAccents[i]);
+  }
+  return b.toString();
+}

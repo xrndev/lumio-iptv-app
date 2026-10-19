@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/channel.dart';
+import '../../../core/network/xtream_client.dart';
 import '../../../core/util/channel_names.dart';
 import '../../../design_system/theme/app_theme.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
@@ -146,15 +147,25 @@ class _AccountBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final a = ref.watch(xtreamAccountProvider);
     if (a == null) return const SizedBox.shrink();
-    final exp = a.expiry == null
-        ? 'sin caducidad'
-        : 'caduca ${a.expiry!.day.toString().padLeft(2, '0')}/'
-            '${a.expiry!.month.toString().padLeft(2, '0')}/${a.expiry!.year}';
-    final conns = a.maxConnections == null ? '' : ' · ${a.maxConnections} conexiones';
+    final notice = accountNotice(a, DateTime.now());
+    if (notice == null) return const SizedBox.shrink();
+    final s = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-      child: Text('Xtream: ${a.status}, $exp$conns',
-          style: Theme.of(context).textTheme.bodySmall),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: s.errorContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(children: [
+            Icon(Icons.warning_amber_rounded, color: s.onErrorContainer, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(notice, style: TextStyle(color: s.onErrorContainer, fontSize: 13))),
+          ]),
+        ),
+      ),
     );
   }
 }
