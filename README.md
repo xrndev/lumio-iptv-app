@@ -33,7 +33,16 @@ No hace falta instalar nada más: cada paquete trae lo que necesita. Se generan 
 | Android | `IPTV-Launcher-android.apk` | Abrir el APK en el dispositivo y permitir la instalación de orígenes desconocidos. |
 | iOS | — | Requiere cuenta de desarrollador de Apple para firmar e instalar; no se distribuye aún. |
 
-Solo el paquete de Windows se ha probado de verdad. La app arranca y pasa una prueba de humo en Windows, Linux, macOS y un simulador de iPhone (flujo `Plataformas`); los paquetes instalables de los demás sistemas los construye `.github/workflows/release.yml` y **aún no se han ejecutado**.
+Qué se ha verificado de verdad:
+
+- **Windows:** instalado y usado a mano.
+- **Windows, Linux, macOS y simulador de iPhone:** la app arranca y pasa una prueba de humo (menú, foco con teclado/mando, carga de lista, reproductor), y el guardado cifrado de la fuente funciona en los cuatro con el almacén real de cada sistema.
+- **Linux:** además, el paquete se instala con `install.sh` y la app instalada arranca.
+- **Todos los paquetes** (Windows, Linux, macOS, Android) se construyen con `.github/workflows/release.yml`.
+
+Sin verificar: reproducción de vídeo real y mando físico en Linux, macOS, iOS y Android, y la app instalada en un dispositivo Android real.
+
+Las pruebas de Linux, macOS e iOS no corren solas (los ejecutores de macOS cuestan 10x en minutos): se lanzan a mano desde Actions → Plataformas → Run workflow.
 
 ## Desarrollar
 
