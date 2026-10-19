@@ -45,7 +45,7 @@ jobs:
         run: xvfb-run -a -s "-screen 0 1280x800x24" flutter test integration_test/smoke_test.dart -d linux
 
   macos:
-    runs-on: macos-latest
+    runs-on: macos-15
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
