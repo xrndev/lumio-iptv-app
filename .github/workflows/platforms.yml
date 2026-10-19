@@ -53,7 +53,15 @@ jobs:
         with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
       - run: flutter pub get
       - name: Prueba de humo en macOS
-        run: flutter test integration_test/smoke_test.dart -d macos
+        # En el ejecutor (sin sesión gráfica) `open` no puede poner la app en primer plano
+        # ("Failed to foreground app") y flutter devuelve 79 "No tests were found" aunque
+        # la prueba corre y pasa. Se valida el resultado que imprime la propia prueba.
+        run: |
+          set +e +o pipefail
+          flutter test integration_test/smoke_test.dart -d macos 2>&1 | tee macos_test.log
+          if grep -q "❌" macos_test.log; then echo "La prueba falló en macOS"; exit 1; fi
+          grep -q "✅ arranque, navegación, foco con mando y reproductor" macos_test.log \
+            || { echo "La prueba no llegó a ejecutarse en macOS"; exit 1; }
 
   ios:
     runs-on: macos-latest
