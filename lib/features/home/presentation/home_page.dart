@@ -9,6 +9,7 @@ import '../../../design_system/adaptive/adaptive_scaffold.dart';
 import '../../../design_system/adaptive/screen_type.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../player/player_providers.dart';
+import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
 import '../../../core/network/xtream_client.dart';
 import '../../player/presentation/player_page.dart';
@@ -70,7 +71,19 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (name == null || !mounted) return;
     final channels = ref.read(playlistProvider).valueOrNull?.channels ?? const [];
     final hit = channels.where((c) => c.name.contains(name));
-    if (hit.isNotEmpty) await ref.read(playChannelProvider)(hit.first);
+    if (hit.isEmpty) return;
+    var channel = hit.first;
+    if (env['IPTV_BREAK_PRIMARY'] == '1') {
+      // Prueba de recuperación: URL principal inexistente, la alternativa es la buena.
+      final c = channel;
+      channel = Channel(
+        index: c.index,
+        name: c.name,
+        url: c.url.replaceFirst(RegExp(r'/\d+\.ts$'), '/99999999.ts'),
+        altUrl: c.altUrl,
+      );
+    }
+    await ref.read(playChannelProvider)(channel);
   }
 
   @override

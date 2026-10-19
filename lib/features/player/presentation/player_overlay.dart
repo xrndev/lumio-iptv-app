@@ -169,11 +169,86 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
                     child: _HudPill(text: _hud ?? ''),
                   ),
                 ),
+                _StatusLayer(engine: engine),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Feedback de carga: spinner mientras abre o rellena el buffer, "Reconectando…"
+/// durante los reintentos y, si no hay manera, el error con botón "Reintentar".
+class _StatusLayer extends StatelessWidget {
+  const _StatusLayer({required this.engine});
+  final PlayerEngine engine;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<PlaybackStatus>(
+      valueListenable: engine.status,
+      builder: (context, status, _) {
+        return StreamBuilder<bool>(
+          stream: engine.player.stream.buffering,
+          initialData: engine.player.state.buffering,
+          builder: (context, buffering) {
+            final phase = status.phase;
+            if (phase == PlaybackPhase.failed) {
+              return Center(
+                child: Container(
+                  margin: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline_rounded, color: Colors.white70, size: 36),
+                      const SizedBox(height: 10),
+                      Text(status.message,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white)),
+                      const SizedBox(height: 14),
+                      FilledButton.icon(
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('Reintentar'),
+                        onPressed: engine.retry,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            final loading = phase == PlaybackPhase.loading ||
+                phase == PlaybackPhase.retrying ||
+                (phase == PlaybackPhase.playing && (buffering.data ?? false));
+            if (!loading) return const SizedBox.shrink();
+            return IgnorePointer(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 44,
+                      height: 44,
+                      child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
+                    ),
+                    if (status.message.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(status.message, style: const TextStyle(color: Colors.white70)),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

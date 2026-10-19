@@ -15,7 +15,12 @@ class Channel {
     this.userAgent,
     this.referrer,
     this.isLive = true,
+    this.altUrl,
   });
+
+  /// URL alternativa del mismo canal (p. ej. `.m3u8` si la principal es `.ts`),
+  /// usada como respaldo si la principal no abre.
+  final String? altUrl;
 
   /// `false` para películas y episodios: el reproductor muestra barra de progreso.
   final bool isLive;

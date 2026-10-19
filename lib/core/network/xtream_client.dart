@@ -310,6 +310,7 @@ class XtreamClient {
           index: out.length,
           name: '${e['name'] ?? e['stream_id']}',
           url: '${c.host}/live/${c.username}/${c.password}/${e['stream_id']}.ts',
+          altUrl: '${c.host}/live/${c.username}/${c.password}/${e['stream_id']}.m3u8',
           tvgId: '${e['epg_channel_id'] ?? ''}',
           logo: '${e['stream_icon'] ?? ''}',
           group: cats['${e['category_id']}'] ?? '',

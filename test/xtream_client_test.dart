@@ -24,6 +24,7 @@ void main() {
     expect(p.skippedLines, 1);
     final a = p.channels[0];
     expect(a.url, 'http://srv.example/live/u/p/101.ts');
+    expect(a.altUrl, 'http://srv.example/live/u/p/101.m3u8'); // respaldo si .ts no abre
     expect(a.group, 'Deportes');
     expect(a.tvgId, 'a.es');
     expect(a.catchup, 'xc');

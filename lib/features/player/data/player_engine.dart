@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -5,6 +6,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../core/models/channel.dart';
+import 'playback_recovery.dart';
 
 enum AspectMode {
   auto('Auto', null, 0),
@@ -23,18 +25,30 @@ enum AspectMode {
   final double panscan;
 }
 
+enum PlaybackPhase { idle, loading, retrying, playing, failed }
+
+class PlaybackStatus {
+  const PlaybackStatus(this.phase, this.message);
+  static const idle = PlaybackStatus(PlaybackPhase.idle, '');
+  static const playing = PlaybackStatus(PlaybackPhase.playing, '');
+
+  final PlaybackPhase phase;
+  final String message;
+}
+
 /// Envuelve media_kit (libmpv). Es el único sitio donde se tocan propiedades mpv.
 class PlayerEngine {
   PlayerEngine()
       : player = Player(
           configuration: const PlayerConfiguration(
-            // Buffer de demuxer ampliado para IPTV con jitter.
-            bufferSize: 32 * 1024 * 1024,
+            // Buffer de demuxer ampliado: 4K/HEVC a 15–25 Mbps necesita ~20–30 s de margen.
+            bufferSize: 64 * 1024 * 1024,
             title: 'IPTV Launcher',
             logLevel: MPVLogLevel.v,
           ),
         ) {
     if (kDebugMode) _attachDebugLog();
+    _listenPlayback();
     video = VideoController(
       player,
       configuration: const VideoControllerConfiguration(enableHardwareAcceleration: true),
@@ -51,12 +65,30 @@ class PlayerEngine {
   void _attachDebugLog() {
     final file = File('${Directory.systemTemp.path}/iptv_player.log')
       ..writeAsStringSync('');
-    void out(String s) => file.writeAsStringSync('$s\n', mode: FileMode.append);
+    void out(String s) => file.writeAsStringSync(
+        '${DateTime.now().toIso8601String().substring(11, 23)} $s\n',
+        mode: FileMode.append);
     player.stream.log.listen((l) => out('[${l.level}] ${l.prefix}: ${l.text.trimRight()}'));
     player.stream.error.listen((e) => out('[ERROR] $e'));
     player.stream.width.listen((w) => out('[state] width=$w height=${player.state.height}'));
     player.stream.tracks.listen((t) => out(
         '[tracks] video=${t.video.map((x) => x.codec)} audio=${t.audio.map((x) => x.codec)}'));
+    // Métricas del decodificador cada 4 s (diagnóstico de 4K/HEVC).
+    Timer.periodic(const Duration(seconds: 4), (_) async {
+      Future<String> p(String k) async {
+        try {
+          return await _mpv.getProperty(k);
+        } catch (_) {
+          return '?';
+        }
+      }
+
+      out('[stats] codec=${await p('video-codec')} hwdec=${await p('hwdec-current')} '
+          'fmt=${await p('video-params/pixelformat')} size=${await p('video-params/w')}x${await p('video-params/h')} '
+          'fps=${await p('container-fps')} dec_drop=${await p('decoder-frame-drop-count')} '
+          'vo_drop=${await p('frame-drop-count')} cache_s=${await p('demuxer-cache-duration')} '
+          'paused_cache=${await p('paused-for-cache')} speed=${await p('cache-speed')}');
+    });
     player.stream.playing.listen((p) => out('[state] playing=$p'));
     player.stream.buffering.listen((b) => out('[state] buffering=$b'));
   }
@@ -76,15 +108,106 @@ class PlayerEngine {
     }
   }
 
-  Future<void> play(Channel channel) async {
+  // --- Apertura con recuperación -------------------------------------------
+  /// Estado de la apertura actual, para que la UI muestre "Reconectando…" o el error.
+  final status = ValueNotifier<PlaybackStatus>(PlaybackStatus.idle);
+
+  Channel? _channel;
+  PlaybackRecovery? _recovery;
+  String? _activeUrl;
+  int _generation = 0; // invalida errores/temporizadores de aperturas anteriores
+  Timer? _watchdog;
+  final _subs = <StreamSubscription<Object?>>[];
+
+  void _listenPlayback() {
+    _subs.add(player.stream.error.listen(_onError));
+    // Primera imagen (o audio, en radios) = la apertura ha tenido éxito.
+    _subs.add(player.stream.width.listen((w) {
+      if ((w ?? 0) > 0) _onStarted();
+    }));
+    _subs.add(player.stream.position.listen((p) {
+      if (p > Duration.zero) _onStarted();
+    }));
+  }
+
+  void _onStarted() {
+    if (_channel == null || status.value.phase == PlaybackPhase.playing) return;
+    _watchdog?.cancel();
+    status.value = PlaybackStatus.playing;
+  }
+
+  void _onError(String message) {
+    final url = _activeUrl;
+    if (_channel == null || url == null) return;
+    // Un error de una apertura anterior (otra URL) no debe afectar a la actual.
+    if (message.contains('Failed to open') && !message.contains(url)) return;
+    unawaited(_recover(_generation));
+  }
+
+  Future<void> _recover(int generation) async {
+    if (generation != _generation) return;
+    _watchdog?.cancel();
+    final channel = _channel;
+    final recovery = _recovery;
+    if (channel == null || recovery == null) return;
+
+    switch (recovery.onFailure()) {
+      case RecoveryAction.retrySame:
+        status.value = const PlaybackStatus(PlaybackPhase.retrying, 'Reconectando…');
+        await Future<void>.delayed(PlaybackRecovery.retryDelay);
+        if (generation == _generation) await _open(channel.url, channel, generation);
+      case RecoveryAction.tryAlternate:
+        status.value = const PlaybackStatus(PlaybackPhase.retrying, 'Probando otro formato…');
+        if (generation == _generation) await _open(channel.altUrl!, channel, generation);
+      case RecoveryAction.giveUp:
+        status.value = const PlaybackStatus(
+          PlaybackPhase.failed,
+          'No se pudo abrir este contenido. Puede estar caído en tu proveedor.',
+        );
+    }
+  }
+
+  Future<void> _open(String url, Channel channel, int generation) async {
+    _activeUrl = url;
     await player.open(
-      Media(channel.url, httpHeaders: channel.httpHeaders.isEmpty ? null : channel.httpHeaders),
+      Media(url, httpHeaders: channel.httpHeaders.isEmpty ? null : channel.httpHeaders),
       play: true,
     );
+    _watchdog?.cancel();
+    _watchdog = Timer(PlaybackRecovery.watchdog, () => unawaited(_recover(generation)));
+  }
+
+  Future<void> play(Channel channel) async {
+    final hadStream = _activeUrl != null && status.value.phase != PlaybackPhase.idle;
+    final generation = ++_generation;
+    _channel = channel;
+    _recovery = PlaybackRecovery(hasAlternate: channel.altUrl != null);
+    status.value = const PlaybackStatus(PlaybackPhase.loading, '');
+    if (hadStream) {
+      // Con una sola conexión permitida, soltar la anterior antes de pedir la nueva.
+      await player.stop();
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (generation != _generation) return;
+    }
+    await _open(channel.url, channel, generation);
+  }
+
+  /// Reintenta el canal actual desde cero (botón "Reintentar").
+  Future<void> retry() async {
+    final c = _channel;
+    if (c != null) await play(c);
   }
 
   Future<void> togglePlay() => player.playOrPause();
-  Future<void> stop() => player.stop();
+
+  Future<void> stop() async {
+    _generation++;
+    _watchdog?.cancel();
+    _channel = null;
+    _activeUrl = null;
+    status.value = PlaybackStatus.idle;
+    await player.stop();
+  }
 
   // --- Posición (VOD / series) ----------------------------------------------
   Stream<Duration> get positionStream => player.stream.position;
@@ -137,5 +260,12 @@ class PlayerEngine {
   Future<void> setAudioDelay(double seconds) =>
       _mpv.setProperty('audio-delay', seconds.toStringAsFixed(2));
 
-  Future<void> dispose() => player.dispose();
+  Future<void> dispose() async {
+    _watchdog?.cancel();
+    for (final s in _subs) {
+      await s.cancel();
+    }
+    status.dispose();
+    await player.dispose();
+  }
 }

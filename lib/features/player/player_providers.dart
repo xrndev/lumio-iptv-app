@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -14,6 +15,24 @@ final playerEngineProvider = Provider<PlayerEngine>((ref) {
   // Solo debug: reproduce una URL al arrancar para diagnosticar sin UI.
   final autoplay = kDebugMode ? Platform.environment['IPTV_AUTOPLAY'] : null;
   if (autoplay != null) engine.player.open(Media(autoplay));
+  // Solo debug: IPTV_AUTOPLAY_SEQ="url|url|url" cambia de canal cada 12 s (prueba de zapping).
+  final seq = kDebugMode ? Platform.environment['IPTV_AUTOPLAY_SEQ']?.split('|') : null;
+  if (seq != null) {
+    var i = 0;
+    final every = int.tryParse(Platform.environment['IPTV_SEQ_SECS'] ?? '') ?? 12;
+    final t = Timer.periodic(Duration(seconds: every), (t) {
+      if (i >= seq.length) return t.cancel();
+      File('${Directory.systemTemp.path}/iptv_player.log').writeAsStringSync(
+          '${DateTime.now().toIso8601String().substring(11, 23)} [seq] abrir #${i + 1}\n',
+          mode: FileMode.append);
+      engine.player.open(Media(seq[i++]));
+    });
+    ref.onDispose(t.cancel);
+    File('${Directory.systemTemp.path}/iptv_player.log').writeAsStringSync(
+        '${DateTime.now().toIso8601String().substring(11, 23)} [seq] abrir #1\n',
+        mode: FileMode.append);
+    engine.player.open(Media(seq[i++]));
+  }
   return engine;
 });
 
