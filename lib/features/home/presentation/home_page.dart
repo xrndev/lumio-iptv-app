@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -18,7 +19,10 @@ import '../../player/presentation/player_view.dart';
 import '../../playlists/playlist_providers.dart';
 import '../../settings/settings_page.dart';
 import '../../vod/presentation/media_page.dart';
+import '../../library/library_providers.dart';
+import '../../library/progress_tracker.dart';
 import 'channel_list_pane.dart';
+import 'favorites_page.dart';
 import 'search_page.dart';
 
 const _destinations = [
@@ -45,10 +49,44 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _index = 0;
+  final _tracker = ProgressTracker();
+  final List<StreamSubscription<Duration>> _subs = [];
+  Duration _duration = Duration.zero;
+
+  /// Anota recientes (canales en directo) y progreso (películas y episodios) mientras se ve.
+  void _startRecording() {
+    final player = ref.read(playerEngineProvider).player;
+    _subs.add(player.stream.duration.listen((d) => _duration = d));
+    _subs.add(player.stream.position.listen((p) {
+      final e = _tracker.onTick(p.inMilliseconds, _duration.inMilliseconds, DateTime.now().millisecondsSinceEpoch);
+      if (e != null) ref.read(libraryProvider.notifier).saveProgress(e);
+    }));
+    ref.listenManual<Channel?>(currentChannelProvider, (prev, next) {
+      final done = _tracker.finish(DateTime.now().millisecondsSinceEpoch);
+      if (done != null) ref.read(libraryProvider.notifier).saveProgress(done);
+      if (next == null) return;
+      _duration = Duration.zero;
+      if (next.isLive) {
+        ref.read(libraryProvider.notifier).addRecent(next.uid);
+      } else {
+        _tracker.start(next);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final s in _subs) {
+      s.cancel();
+    }
+    super.dispose();
+  }
+
 
   @override
   void initState() {
     super.initState();
+    _startRecording();
     if (kDebugMode) _debugBootstrap();
   }
 
@@ -98,13 +136,8 @@ class _HomePageState extends ConsumerState<HomePage> {
         1 => const MediaPage(kind: MediaKind.movies),
         2 => const MediaPage(kind: MediaKind.series),
         3 => const SearchPage(),
-        5 => const SettingsPage(),
-        _ => GlassCard(
-            child: Center(
-              child: Text(_destinations[_index].label,
-                  style: Theme.of(context).textTheme.titleLarge),
-            ),
-          ), // TODO: favoritos
+        4 => const FavoritesPage(),
+        _ => const SettingsPage(),
       },
     );
   }

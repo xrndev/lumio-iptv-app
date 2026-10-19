@@ -67,3 +67,9 @@ final globalResultsProvider = Provider<GlobalResults>((ref) {
     series: series.where((m) => hit(m.title)).take(globalResultLimit).toList(),
   );
 });
+
+/// Películas o series del catálogo por su `uid` (`m<id>` / `s<id>`), para resolver favoritos.
+final mediaByUidProvider = Provider.family<Map<String, MediaEntry>, MediaKind>((ref, kind) {
+  final items = ref.watch(mediaCatalogProvider(kind)).valueOrNull?.items ?? const <MediaEntry>[];
+  return {for (final m in items) m.uid: m};
+});

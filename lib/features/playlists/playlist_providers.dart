@@ -184,3 +184,10 @@ final visibleChannelsProvider = Provider<List<Channel>>((ref) {
       .where((c) => (group == null || c.group == group) && (q.isEmpty || c.name.toLowerCase().contains(q)))
       .toList(growable: false);
 });
+
+/// Canales de la lista activa por su identificador estable (`Channel.uid`): sirve para
+/// convertir favoritos y recientes guardados en canales reproducibles.
+final channelsByUidProvider = Provider<Map<String, Channel>>((ref) {
+  final channels = ref.watch(playlistProvider).valueOrNull?.channels ?? const <Channel>[];
+  return {for (final c in channels) c.uid: c};
+});
