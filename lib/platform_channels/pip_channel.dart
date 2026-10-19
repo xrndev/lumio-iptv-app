@@ -11,7 +11,7 @@ import 'package:flutter/services.dart';
 class PipChannel {
   const PipChannel._();
 
-  static const _channel = MethodChannel('iptv_launcher/pip');
+  static const _channel = MethodChannel('lumio/pip');
 
   static bool get isSupported => Platform.isAndroid || Platform.isIOS;
 

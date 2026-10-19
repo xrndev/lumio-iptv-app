@@ -69,13 +69,13 @@ jobs:
       - name: Paquete e instalador (install.sh) y arranque de la app instalada
         run: |
           ./scripts/package.sh
-          mkdir -p "$RUNNER_TEMP/pkg" && tar -xzf dist/IPTV-Launcher-linux-x64.tar.gz -C "$RUNNER_TEMP/pkg"
-          "$RUNNER_TEMP/pkg/IPTV-Launcher-linux-x64/install.sh"
-          test -x "$HOME/.local/share/iptv-launcher/iptv_launcher"
-          test -f "$HOME/.local/share/applications/iptv-launcher.desktop"
+          mkdir -p "$RUNNER_TEMP/pkg" && tar -xzf dist/Lumio-linux-x64.tar.gz -C "$RUNNER_TEMP/pkg"
+          "$RUNNER_TEMP/pkg/Lumio-linux-x64/install.sh"
+          test -x "$HOME/.local/share/lumio/lumio"
+          test -f "$HOME/.local/share/applications/lumio.desktop"
           # La app instalada debe arrancar y mantenerse viva 10 s bajo pantalla virtual.
           xvfb-run -a -s "-screen 0 1280x800x24" bash -c '
-            "$HOME/.local/bin/iptv-launcher" & pid=$!
+            "$HOME/.local/bin/lumio" & pid=$!
             sleep 10
             if kill -0 $pid 2>/dev/null; then echo "La app instalada sigue viva"; kill $pid; else echo "La app instalada se cerró"; exit 1; fi'
 

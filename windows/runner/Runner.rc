@@ -89,15 +89,17 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.iptvlauncher" "\0"
-            VALUE "FileDescription", "IPTV Launcher" "\0"
+            VALUE "CompanyName", "Lumio" "\0"
+            VALUE "FileDescription", "Lumio" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "iptv_launcher" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.iptvlauncher. All rights reserved." "\0"
-            VALUE "OriginalFilename", "iptv_launcher.exe" "\0"
+            VALUE "InternalName", "lumio" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Lumio. All rights reserved." "\0"
+            VALUE "OriginalFilename", "lumio.exe" "\0"
             // NO cambiar: Flutter deriva de CompanyName/ProductName la carpeta de datos
-            // (%APPDATA%\com.iptvlauncher\iptv_launcher) donde se guarda la fuente cifrada.
-            VALUE "ProductName", "iptv_launcher" "\0"
+            // (%APPDATA%\Lumio\Lumio) donde se guarda la fuente cifrada. Hasta la versión
+            // anterior era %APPDATA%\com.iptvlauncher\iptv_launcher: lib/core/storage/legacy_migration.dart
+            // la copia al arrancar.
+            VALUE "ProductName", "Lumio" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

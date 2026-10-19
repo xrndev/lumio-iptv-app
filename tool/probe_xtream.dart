@@ -2,8 +2,8 @@
 // Comprueba el cliente Xtream contra un servidor real (sin guardar credenciales).
 import 'dart:io';
 
-import 'package:iptv_launcher/core/models/media.dart';
-import 'package:iptv_launcher/core/network/xtream_client.dart';
+import 'package:lumio/core/models/media.dart';
+import 'package:lumio/core/network/xtream_client.dart';
 
 Future<void> main() async {
   final raw = Platform.environment['IPTV_XTREAM']?.split('|');

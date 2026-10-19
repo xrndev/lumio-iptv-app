@@ -12,9 +12,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:iptv_launcher/app.dart';
-import 'package:iptv_launcher/core/storage/source_store.dart';
-import 'package:iptv_launcher/features/playlists/playlist_providers.dart';
+import 'package:lumio/app.dart';
+import 'package:lumio/core/storage/source_store.dart';
+import 'package:lumio/features/playlists/playlist_providers.dart';
 import 'package:media_kit/media_kit.dart';
 
 void main() {

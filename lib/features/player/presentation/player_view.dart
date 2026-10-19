@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
-import '../../../design_system/theme/app_theme.dart';
+import '../../../design_system/widgets/lumio_mark.dart';
 import '../player_providers.dart';
 import 'player_overlay.dart';
 
@@ -43,8 +43,8 @@ class _EmptyPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
+    return const DecoratedBox(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFF12151F), Color(0xFF0A0C12)],
           begin: Alignment.topLeft,
@@ -55,13 +55,9 @@ class _EmptyPlayer extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ShaderMask(
-              shaderCallback: (r) => AppColors.accentGradient.createShader(r),
-              child: const Icon(Icons.live_tv_rounded, size: 56, color: Colors.white),
-            ),
-            const SizedBox(height: 12),
-            const Text('Selecciona un canal',
-                style: TextStyle(color: Colors.white70, fontSize: 16)),
+            LumioMark(size: 72),
+            SizedBox(height: 12),
+            Text('Selecciona un canal', style: TextStyle(color: Colors.white70, fontSize: 16)),
           ],
         ),
       ),

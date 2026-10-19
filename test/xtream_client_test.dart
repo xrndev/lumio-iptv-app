@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iptv_launcher/core/models/media.dart';
-import 'package:iptv_launcher/core/network/xtream_client.dart';
+import 'package:lumio/core/models/media.dart';
+import 'package:lumio/core/network/xtream_client.dart';
 
 void main() {
   test('normaliza el host', () {

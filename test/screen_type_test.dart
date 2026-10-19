@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iptv_launcher/design_system/adaptive/screen_type.dart';
+import 'package:lumio/design_system/adaptive/screen_type.dart';
 
 void main() {
   test('breakpoints Material 3', () {

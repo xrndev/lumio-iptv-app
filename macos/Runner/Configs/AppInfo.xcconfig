@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = iptv_launcher
+PRODUCT_NAME = Lumio
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.iptvlauncher.iptvLauncher
+PRODUCT_BUNDLE_IDENTIFIER = app.lumio.player
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.iptvlauncher. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Lumio. All rights reserved.

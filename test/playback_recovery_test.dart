@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iptv_launcher/features/player/data/playback_recovery.dart';
+import 'package:lumio/features/player/data/playback_recovery.dart';
 
 void main() {
   test('con URL alternativa: reintenta, prueba el otro formato y se rinde', () {

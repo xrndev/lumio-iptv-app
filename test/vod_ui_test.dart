@@ -2,15 +2,15 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iptv_launcher/core/models/channel.dart';
-import 'package:iptv_launcher/core/models/media.dart';
-import 'package:iptv_launcher/core/network/xtream_client.dart';
-import 'package:iptv_launcher/design_system/theme/app_theme.dart';
-import 'package:iptv_launcher/design_system/widgets/wheel_scroll_row.dart';
-import 'package:iptv_launcher/features/home/presentation/search_page.dart';
-import 'package:iptv_launcher/features/playlists/playlist_providers.dart';
-import 'package:iptv_launcher/features/vod/presentation/media_page.dart';
-import 'package:iptv_launcher/features/vod/vod_providers.dart';
+import 'package:lumio/core/models/channel.dart';
+import 'package:lumio/core/models/media.dart';
+import 'package:lumio/core/network/xtream_client.dart';
+import 'package:lumio/design_system/theme/app_theme.dart';
+import 'package:lumio/design_system/widgets/wheel_scroll_row.dart';
+import 'package:lumio/features/home/presentation/search_page.dart';
+import 'package:lumio/features/playlists/playlist_providers.dart';
+import 'package:lumio/features/vod/presentation/media_page.dart';
+import 'package:lumio/features/vod/vod_providers.dart';
 
 final _creds = XtreamCredentials(host: 'srv.example', username: 'u', password: 'p');
 

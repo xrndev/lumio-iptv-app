@@ -1,5 +1,5 @@
 @echo off
-rem Doble clic para instalar IPTV Launcher (sin administrador, sin dependencias).
+rem Doble clic para instalar Lumio (sin administrador, sin dependencias).
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install.ps1" %*
 if errorlevel 1 (
   echo.

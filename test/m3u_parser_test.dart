@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iptv_launcher/core/parsing/m3u_parser.dart';
+import 'package:lumio/core/parsing/m3u_parser.dart';
 
 void main() {
   test('parsea atributos, comas dentro de comillas y cabecera EPG', () {

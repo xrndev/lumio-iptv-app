@@ -1,4 +1,4 @@
-package com.iptvlauncher.iptv_launcher
+package app.lumio.player
 
 import android.app.UiModeManager
 import android.content.res.Configuration
@@ -10,7 +10,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "iptv_launcher/pip")
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumio/pip")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "isTelevision" -> result.success(isTelevision())

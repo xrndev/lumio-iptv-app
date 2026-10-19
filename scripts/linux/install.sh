@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Instala IPTV Launcher para el usuario actual en Linux:
+# Instala Lumio para el usuario actual en Linux:
 #  - instala las librerías de sistema que necesita (libmpv, GTK, libsecret) si faltan
-#  - copia la app a ~/.local/share/iptv-launcher y crea el lanzador del menú/escritorio
+#  - copia la app a ~/.local/share/lumio y crea el lanzador del menú/escritorio
 # Uso: ./install.sh        (pide sudo solo si hay que instalar librerías)
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SRC="$HERE/app"
-[ -x "$SRC/iptv_launcher" ] || { echo "No se encuentra $SRC/iptv_launcher. Ejecuta el instalador desde la carpeta descomprimida." >&2; exit 1; }
+[ -x "$SRC/lumio" ] || { echo "No se encuentra $SRC/lumio. Ejecuta el instalador desde la carpeta descomprimida." >&2; exit 1; }
 
 SUDO=""
 [ "$(id -u)" -eq 0 ] || SUDO="sudo"
@@ -30,7 +30,7 @@ install_libs() {
 }
 
 # ¿Falta alguna librería dinámica?
-if ldd "$SRC/iptv_launcher" "$SRC"/lib/*.so 2>/dev/null | grep -q "not found"; then
+if ldd "$SRC/lumio" "$SRC"/lib/*.so 2>/dev/null | grep -q "not found"; then
   echo "Instalando librerías necesarias…"
   install_libs
 fi
@@ -40,21 +40,29 @@ if ! ldconfig -p 2>/dev/null | grep -q "libmpv.so"; then
   install_libs
 fi
 
-DEST="$HOME/.local/share/iptv-launcher"
+DEST="$HOME/.local/share/lumio"
+
+# Retirar la instalación anterior, de cuando la app se llamaba "IPTV Launcher".
+rm -rf "$HOME/.local/share/iptv-launcher" "$HOME/.local/bin/iptv-launcher" \
+  "$HOME/.local/share/applications/iptv-launcher.desktop"
+DESK_OLD="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+rm -f "$DESK_OLD/IPTV Launcher.desktop"
+
 rm -rf "$DEST"
 mkdir -p "$DEST" "$HOME/.local/bin" "$HOME/.local/share/applications"
 cp -r "$SRC/." "$DEST/"
-chmod +x "$DEST/iptv_launcher"
-ln -sf "$DEST/iptv_launcher" "$HOME/.local/bin/iptv-launcher"
+[ -f "$HERE/lumio.png" ] && cp "$HERE/lumio.png" "$DEST/lumio.png"
+chmod +x "$DEST/lumio"
+ln -sf "$DEST/lumio" "$HOME/.local/bin/lumio"
 
-DESKTOP_FILE="$HOME/.local/share/applications/iptv-launcher.desktop"
+DESKTOP_FILE="$HOME/.local/share/applications/lumio.desktop"
 cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Type=Application
-Name=IPTV Launcher
+Name=Lumio
 Comment=Reproductor IPTV
-Exec=$DEST/iptv_launcher
-Icon=video-display
+Exec=$DEST/lumio
+Icon=$DEST/lumio.png
 Terminal=false
 Categories=AudioVideo;Video;Player;
 EOF
@@ -63,10 +71,10 @@ chmod +x "$DESKTOP_FILE"
 # Acceso directo en el escritorio (si existe la carpeta).
 DESK="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
 if [ -d "$DESK" ]; then
-  cp "$DESKTOP_FILE" "$DESK/IPTV Launcher.desktop"
-  chmod +x "$DESK/IPTV Launcher.desktop"
-  gio set "$DESK/IPTV Launcher.desktop" metadata::trusted true 2>/dev/null || true
+  cp "$DESKTOP_FILE" "$DESK/Lumio.desktop"
+  chmod +x "$DESK/Lumio.desktop"
+  gio set "$DESK/Lumio.desktop" metadata::trusted true 2>/dev/null || true
 fi
 
-echo "IPTV Launcher instalado en $DEST"
-echo "Ábrelo desde el menú de aplicaciones o con: iptv-launcher"
+echo "Lumio instalado en $DEST"
+echo "Ábrelo desde el menú de aplicaciones o con: lumio"

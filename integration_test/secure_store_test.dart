@@ -3,7 +3,7 @@
 // nunca la de la fuente del usuario).
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:iptv_launcher/core/storage/source_store.dart';
+import 'package:lumio/core/storage/source_store.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();

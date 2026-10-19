@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iptv_launcher/core/storage/source_store.dart';
-import 'package:iptv_launcher/features/playlists/playlist_providers.dart';
+import 'package:lumio/core/storage/source_store.dart';
+import 'package:lumio/features/playlists/playlist_providers.dart';
 
 /// Simula un llavero que rechaza escribir y borrar (p. ej. macOS sin entitlement, -34018).
 class _BrokenStore extends MemorySourceStore {

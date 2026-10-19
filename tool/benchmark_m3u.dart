@@ -2,7 +2,7 @@
 // Genera una lista sintética, la parsea en un Isolate y reporta tiempo y RSS.
 import 'dart:io';
 
-import 'package:iptv_launcher/core/parsing/m3u_parser.dart';
+import 'package:lumio/core/parsing/m3u_parser.dart';
 
 Future<void> main(List<String> args) async {
   final n = args.isNotEmpty ? int.parse(args.first) : 50000;

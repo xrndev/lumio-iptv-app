@@ -1,4 +1,4 @@
-# Genera dist/IPTV-Launcher-windows.zip con la app compilada en release, las DLL de
+# Genera dist/Lumio-windows.zip con la app compilada en release, las DLL de
 # Visual C++ (despliegue local: funciona en un Windows limpio) y el instalador.
 # Uso: ./scripts/package-windows.ps1 [-Install]   (-Install además la instala aquí)
 param([switch]$Install)
@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Stop'
 if ($buildExit -ne 0) { throw 'flutter build windows falló' }
 
 $release = 'build\windows\x64\runner\Release'
-$stage = 'dist\IPTV-Launcher-windows'
+$stage = 'dist\Lumio-windows'
 if (Test-Path dist) { Remove-Item dist -Recurse -Force }
 New-Item -ItemType Directory -Force "$stage\app" | Out-Null
 Copy-Item "$release\*" "$stage\app" -Recurse
@@ -30,9 +30,9 @@ foreach ($dll in 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll') {
 }
 
 Copy-Item scripts\windows\Install.ps1, scripts\windows\Install.cmd $stage
-Compress-Archive -Path "$stage\*" -DestinationPath dist\IPTV-Launcher-windows.zip -Force
+Compress-Archive -Path "$stage\*" -DestinationPath dist\Lumio-windows.zip -Force
 
-$mb = [math]::Round((Get-Item dist\IPTV-Launcher-windows.zip).Length / 1MB, 1)
-Write-Host "Paquete listo: dist\IPTV-Launcher-windows.zip ($mb MB)"
+$mb = [math]::Round((Get-Item dist\Lumio-windows.zip).Length / 1MB, 1)
+Write-Host "Paquete listo: dist\Lumio-windows.zip ($mb MB)"
 
 if ($Install) { & "$stage\Install.ps1" }

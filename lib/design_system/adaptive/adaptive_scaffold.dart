@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
 import '../widgets/focus_ring.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/lumio_mark.dart';
 import 'screen_type.dart';
 
 class AdaptiveDestination {
@@ -49,7 +49,7 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: GlassCard(
               radius: 28,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               child: Row(
                 children: [
                   for (var i = 0; i < widget.destinations.length; i++)
@@ -133,25 +133,20 @@ class _Brand extends StatelessWidget {
       mainAxisAlignment: extended ? MainAxisAlignment.start : MainAxisAlignment.center,
       children: [
         const SizedBox(width: 2),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            gradient: AppColors.accentGradient,
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 26),
+        Semantics(
+          label: 'Lumio',
+          child: const SizedBox(width: 40, height: 40, child: LumioMark(size: 40)),
         ),
         if (extended) ...[
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Flexible(
-            child: Text('IPTV',
+            child: Text('Lumio',
                 maxLines: 1,
                 overflow: TextOverflow.clip,
                 style: Theme.of(context)
                     .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3)),
           ),
         ],
       ],
@@ -186,7 +181,7 @@ class _NavItem extends StatelessWidget {
       style: TextStyle(
         color: selected ? s.onSurface : s.onSurfaceVariant,
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        fontSize: stacked ? 11 : 14,
+        fontSize: stacked ? 10 : 14,
       ),
     );
 
@@ -205,7 +200,7 @@ class _NavItem extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             constraints: const BoxConstraints(minHeight: 48),
-            padding: EdgeInsets.symmetric(horizontal: extended ? 14 : 8, vertical: stacked ? 8 : 12),
+            padding: EdgeInsets.symmetric(horizontal: extended ? 14 : (stacked ? 0 : 8), vertical: stacked ? 8 : 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               color: selected ? s.primary.withValues(alpha: 0.16) : Colors.transparent,

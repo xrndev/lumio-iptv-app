@@ -43,7 +43,7 @@ class PlayerEngine {
           configuration: const PlayerConfiguration(
             // Buffer de demuxer ampliado: 4K/HEVC a 15–25 Mbps necesita ~20–30 s de margen.
             bufferSize: 64 * 1024 * 1024,
-            title: 'IPTV Launcher',
+            title: 'Lumio',
             logLevel: MPVLogLevel.v,
           ),
         ) {

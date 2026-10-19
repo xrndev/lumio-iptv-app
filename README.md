@@ -1,4 +1,8 @@
-# IPTV Launcher
+<p align="center">
+  <img src="assets/branding/lumio_icon_round.png" width="128" alt="Logo de Lumio">
+</p>
+
+# Lumio
 
 Reproductor IPTV hecho con Flutter: una sola base de código para Android, iOS, Windows, macOS y Linux. Pensado para listas grandes (50.000+ canales) sin bloquear la interfaz.
 
@@ -27,10 +31,10 @@ No hace falta instalar nada más: cada paquete trae lo que necesita. Se generan 
 
 | Sistema | Paquete | Cómo instalar |
 |---|---|---|
-| Windows 10/11 | `IPTV-Launcher-windows.zip` | Descomprimir y doble clic en `Install.cmd`. Sin administrador; crea accesos directos en el Escritorio y el menú Inicio. |
-| Linux | `IPTV-Launcher-linux-x64.tar.gz` | Descomprimir y ejecutar `./install.sh`. Instala solo las librerías que falten (libmpv, GTK, libsecret) con el gestor de paquetes (apt, dnf, pacman o zypper). |
-| macOS | `IPTV-Launcher-macos.zip` | Descomprimir y arrastrar a Aplicaciones. App sin firmar: la primera vez, clic derecho → Abrir. |
-| Android | `IPTV-Launcher-android.apk` | Abrir el APK en el dispositivo y permitir la instalación de orígenes desconocidos. |
+| Windows 10/11 | `Lumio-windows.zip` | Descomprimir y doble clic en `Install.cmd`. Sin administrador; crea accesos directos en el Escritorio y el menú Inicio. |
+| Linux | `Lumio-linux-x64.tar.gz` | Descomprimir y ejecutar `./install.sh`. Instala solo las librerías que falten (libmpv, GTK, libsecret) con el gestor de paquetes (apt, dnf, pacman o zypper). |
+| macOS | `Lumio-macos.zip` | Descomprimir y arrastrar a Aplicaciones. App sin firmar: la primera vez, clic derecho → Abrir. |
+| Android | `Lumio-android.apk` | Abrir el APK en el dispositivo y permitir la instalación de orígenes desconocidos. |
 | iOS | — | Requiere cuenta de desarrollador de Apple para firmar e instalar; no se distribuye aún. |
 
 Qué se ha verificado de verdad:
