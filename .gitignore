@@ -1,0 +1,17 @@
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+*.iml
+.idea/
+.vscode/
+_scaffold/
+.bench/
+
+# Skills instaladas (reproducibles con scripts/setup_skills)
+.agents/
+.claude/skills/
+skills-lock.json
+.hermes/
