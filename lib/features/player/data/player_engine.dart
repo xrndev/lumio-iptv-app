@@ -6,6 +6,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../core/models/channel.dart';
+import 'issue_text.dart';
 import 'playback_recovery.dart';
 
 enum AspectMode {
@@ -28,12 +29,15 @@ enum AspectMode {
 enum PlaybackPhase { idle, loading, retrying, playing, failed }
 
 class PlaybackStatus {
-  const PlaybackStatus(this.phase, this.message);
+  const PlaybackStatus(this.phase, this.message, [this.detail = '']);
   static const idle = PlaybackStatus(PlaybackPhase.idle, '');
   static const playing = PlaybackStatus(PlaybackPhase.playing, '');
 
   final PlaybackPhase phase;
   final String message;
+
+  /// Motivo técnico (ya sin credenciales) para diagnosticar; vacío si no se conoce.
+  final String detail;
 }
 
 /// Envuelve media_kit (libmpv). Es el único sitio donde se tocan propiedades mpv.
@@ -44,7 +48,7 @@ class PlayerEngine {
             // Buffer de demuxer ampliado: 4K/HEVC a 15–25 Mbps necesita ~20–30 s de margen.
             bufferSize: 64 * 1024 * 1024,
             title: 'Lumio',
-            logLevel: MPVLogLevel.v,
+            logLevel: kDebugMode ? MPVLogLevel.v : MPVLogLevel.warn,
           ),
         ) {
     if (kDebugMode) _attachDebugLog();
@@ -119,8 +123,18 @@ class PlayerEngine {
   Timer? _watchdog;
   final _subs = <StreamSubscription<Object?>>[];
 
+  String? _lastIssue; // última línea del registro/errores útil para explicar un fallo
+
   void _listenPlayback() {
-    _subs.add(player.stream.error.listen(_onError));
+    _subs.add(player.stream.error.listen((e) {
+      if (isInterestingIssue(e)) _lastIssue = e;
+      _onError(e);
+    }));
+    _subs.add(player.stream.log.listen((l) {
+      if ((l.level == 'error' || l.level == 'warn') && isInterestingIssue(l.text)) {
+        _lastIssue = l.text;
+      }
+    }));
     // Primera imagen (o audio, en radios) = la apertura ha tenido éxito.
     _subs.add(player.stream.width.listen((w) {
       if ((w ?? 0) > 0) _onStarted();
@@ -160,9 +174,10 @@ class PlayerEngine {
         status.value = const PlaybackStatus(PlaybackPhase.retrying, 'Probando otro formato…');
         if (generation == _generation) await _open(channel.altUrl!, channel, generation);
       case RecoveryAction.giveUp:
-        status.value = const PlaybackStatus(
+        status.value = PlaybackStatus(
           PlaybackPhase.failed,
           'No se pudo abrir este contenido. Puede estar caído en tu proveedor.',
+          sanitizeIssue(_lastIssue ?? ''),
         );
     }
   }
@@ -182,6 +197,7 @@ class PlayerEngine {
     final generation = ++_generation;
     _channel = channel;
     _recovery = PlaybackRecovery(hasAlternate: channel.altUrl != null);
+    _lastIssue = null;
     status.value = const PlaybackStatus(PlaybackPhase.loading, '');
     if (hadStream) {
       // Con una sola conexión permitida, soltar la anterior antes de pedir la nueva.

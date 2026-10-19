@@ -227,6 +227,16 @@ class _StatusLayer extends StatelessWidget {
                       Text(status.message,
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.white)),
+                      if (status.detail.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        // Motivo técnico (sin credenciales): ayuda a distinguir VPN/bloqueo
+                        // del proveedor, límite de conexiones, red caída, etc.
+                        Text(status.detail,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                      ],
                       const SizedBox(height: 14),
                       FilledButton.icon(
                         icon: const Icon(Icons.refresh_rounded),
