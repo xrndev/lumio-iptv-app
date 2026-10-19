@@ -21,20 +21,38 @@ Reproductor IPTV hecho con Flutter: una sola base de código para Android, iOS, 
 
 EPG (XMLTV), base de datos local (drift), favoritos, "continuar viendo", control parental, multi-pantalla, PiP nativo, selector de pistas en la UI, módulo freemium y PVR. El detalle está en [`CLAUDE.md`](CLAUDE.md).
 
-## Requisitos
+## Instalar (usuarios)
 
-- [Flutter](https://docs.flutter.dev/get-started/install) estable (probado con 3.47.7 / Dart 3.13).
-- Windows: **Modo desarrollador** activado (`start ms-settings:developers`), necesario para los symlinks de los plugins, y Visual Studio con la carga de trabajo de C++ **y el componente ATL** (lo exige `flutter_secure_storage`).
-- Node.js solo si quieres reinstalar las skills de diseño.
+No hace falta instalar nada más: cada paquete trae lo que necesita. Se generan en [Releases](../../releases) al publicar una versión (ver más abajo).
 
-## Puesta en marcha
+| Sistema | Paquete | Cómo instalar |
+|---|---|---|
+| Windows 10/11 | `IPTV-Launcher-windows.zip` | Descomprimir y doble clic en `Install.cmd`. Sin administrador; crea accesos directos en el Escritorio y el menú Inicio. |
+| Linux | `IPTV-Launcher-linux-x64.tar.gz` | Descomprimir y ejecutar `./install.sh`. Instala solo las librerías que falten (libmpv, GTK, libsecret) con el gestor de paquetes (apt, dnf, pacman o zypper). |
+| macOS | `IPTV-Launcher-macos.zip` | Descomprimir y arrastrar a Aplicaciones. App sin firmar: la primera vez, clic derecho → Abrir. |
+| Android | `IPTV-Launcher-android.apk` | Abrir el APK en el dispositivo y permitir la instalación de orígenes desconocidos. |
+| iOS | — | Requiere cuenta de desarrollador de Apple para firmar e instalar; no se distribuye aún. |
+
+Solo el paquete de Windows se ha probado de verdad. Los demás los construye la integración continua (`.github/workflows/release.yml`) y **aún no se han ejecutado**.
+
+## Desarrollar
+
+Un solo comando prepara el entorno e instala lo que falte (Git, Flutter, Modo desarrollador y C++ ATL en Windows; compiladores y librerías en Linux; herramientas de Xcode en macOS):
 
 ```powershell
-./scripts/setup.ps1        # genera carpetas de plataforma que falten + flutter pub get
-flutter run -d windows     # o android / ios / macos / linux
+./scripts/setup.ps1        # Windows (pedirá permiso de administrador solo si hace falta)
+./scripts/setup.sh         # macOS / Linux
+flutter run -d windows     # o linux / macos / android
 ```
 
-En macOS/Linux usa `scripts/setup.sh`.
+Generar un paquete instalable en tu sistema:
+
+```powershell
+./scripts/package-windows.ps1 -Install   # Windows: compila, empaqueta e instala con acceso directo
+./scripts/package.sh                     # Linux / macOS
+```
+
+Publicar una versión para todos los sistemas: `git tag v0.1.0 && git push origin v0.1.0`.
 
 ```powershell
 flutter analyze
