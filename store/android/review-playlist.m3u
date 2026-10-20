@@ -1,0 +1,7 @@
+#EXTM3U
+#EXTINF:-1 group-title="Demo",Big Buck Bunny (HLS de prueba)
+https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8
+#EXTINF:-1 group-title="Demo",Apple BipBop (HEVC de prueba)
+https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/master.m3u8
+#EXTINF:-1 group-title="Demo",Tears of Steel (HLS de prueba)
+https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8

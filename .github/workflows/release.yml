@@ -54,6 +54,11 @@ jobs:
 
   android:
     runs-on: ubuntu-latest
+    env:
+      # Secretos de la clave de subida a Google Play (ver store/android/PUBLICAR.md).
+      # Sin ellos el APK se firma con la clave de depuración y no se genera el AAB.
+      KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -61,14 +66,25 @@ jobs:
       - uses: subosito/flutter-action@v2
         with: { flutter-version: '${{ env.FLUTTER_VERSION }}', channel: stable, cache: true }
       - run: flutter pub get
-      # Sin clave de firma propia, el APK se firma con la de depuración: sirve para instalar
-      # directamente en un dispositivo, no para publicar en Google Play.
+      - name: Clave de firma (si hay secretos)
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > android/lumio-upload.p12
+          printf 'storeFile=lumio-upload.p12\nstorePassword=%s\nkeyAlias=lumio-upload\nkeyPassword=%s\n' \
+            "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > android/key.properties
       - run: flutter build apk --release
+      - name: AAB para Google Play (solo con clave de firma)
+        if: env.KEYSTORE_B64 != ''
+        run: flutter build appbundle --release
       - run: |
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk dist/Lumio-android.apk
+          [ -f build/app/outputs/bundle/release/app-release.aab ] && cp build/app/outputs/bundle/release/app-release.aab dist/Lumio-android.aab || true
       - uses: actions/upload-artifact@v4
         with: { name: android, path: dist/Lumio-android.apk }
+      - uses: actions/upload-artifact@v4
+        if: env.KEYSTORE_B64 != ''
+        with: { name: android-aab, path: dist/Lumio-android.aab }
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -79,6 +95,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with: { path: artifacts, merge-multiple: true }
+      - run: rm -f artifacts/*.aab # el AAB es solo para Google Play
       - uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*
