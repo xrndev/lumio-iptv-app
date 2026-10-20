@@ -12,6 +12,9 @@ dependencies:
     sdk: flutter
 
   # Estado
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   flutter_riverpod: ^2.5.1
 
   # Vídeo (libmpv, hwdec en las 5 plataformas)
@@ -62,3 +65,4 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  generate: true

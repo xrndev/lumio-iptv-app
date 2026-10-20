@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../design_system/widgets/lumio_mark.dart';
 import '../player_providers.dart';
 import 'player_overlay.dart';
@@ -25,7 +26,7 @@ class PlayerView extends ConsumerWidget {
         fit: StackFit.expand,
         children: [
           Semantics(
-            label: channel == null ? 'Reproductor sin canal' : 'Reproduciendo ${channel.name}',
+            label: channel == null ? AppLocalizations.of(context).playerNoChannel : AppLocalizations.of(context).playerPlaying(channel.name),
             child: Video(
               controller: engine.video,
               controls: (state) => PlayerOverlay(state: state, onBack: onBack),

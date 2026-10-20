@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
 import '../../../design_system/widgets/glass_card.dart';
@@ -34,7 +35,7 @@ class SearchPage extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
             child: Row(
               children: [
-                Text('Buscar',
+                Text(AppLocalizations.of(context).navSearch,
                     style: Theme.of(context)
                         .textTheme
                         .headlineSmall
@@ -44,10 +45,10 @@ class SearchPage extends ConsumerWidget {
                   child: TextField(
                     autofocus: true,
                     onChanged: (v) => ref.read(globalSearchProvider.notifier).state = v,
-                    decoration: const InputDecoration(
-                      hintText: 'Canales, películas y series',
-                      prefixIcon: Icon(Icons.search_rounded),
-                      contentPadding: EdgeInsets.symmetric(vertical: 14),
+                    decoration: InputDecoration(
+                      hintText: AppLocalizations.of(context).searchHint,
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                       isDense: true,
                     ),
                   ),
@@ -56,32 +57,32 @@ class SearchPage extends ConsumerWidget {
             ),
           ),
           if (loadingCatalogs)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: Row(children: [
-                SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-                SizedBox(width: 10),
-                Text('Cargando catálogo de películas y series…', style: TextStyle(fontSize: 12)),
+                const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(width: 10),
+                Text(AppLocalizations.of(context).searchLoadingCatalogs, style: const TextStyle(fontSize: 12)),
               ]),
             ),
           Expanded(
             child: q.length < 2
                 ? Center(child: Text('Escribe al menos 2 letras', style: TextStyle(color: s.onSurfaceVariant)))
                 : results.isEmpty && !loadingCatalogs
-                    ? Center(child: Text('Sin resultados para "$q"', style: TextStyle(color: s.onSurfaceVariant)))
+                    ? Center(child: Text(AppLocalizations.of(context).noResultsFor(q), style: TextStyle(color: s.onSurfaceVariant)))
                     : ListView(
                         padding: const EdgeInsets.only(bottom: 20),
                         children: [
                           if (results.channels.isNotEmpty) ...[
-                            _SectionTitle('Canales', results.channels.length),
+                            _SectionTitle(AppLocalizations.of(context).kindChannels, results.channels.length),
                             for (final c in results.channels) _ChannelRow(channel: c),
                           ],
                           if (results.movies.isNotEmpty) ...[
-                            _SectionTitle('Películas', results.movies.length),
+                            _SectionTitle(AppLocalizations.of(context).navMovies, results.movies.length),
                             _PosterRow(items: results.movies),
                           ],
                           if (results.series.isNotEmpty) ...[
-                            _SectionTitle('Series', results.series.length),
+                            _SectionTitle(AppLocalizations.of(context).navSeries, results.series.length),
                             _PosterRow(items: results.series),
                           ],
                         ],

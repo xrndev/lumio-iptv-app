@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../core/network/xtream_client.dart';
 import '../../../platform_channels/tv_provider.dart';
 import '../playlist_providers.dart';
@@ -39,7 +40,7 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
   void _submitUrl() {
     final v = _url.text.trim();
     if (!(Uri.tryParse(v)?.hasScheme ?? false)) {
-      setState(() => _error = 'Introduce una URL completa (http:// o https://)');
+      setState(() => _error = AppLocalizations.of(context).errUrlInvalid);
       return;
     }
     _done((n) => n.loadUrl(v));
@@ -57,7 +58,7 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
 
   void _submitXtream() {
     if ([_host, _user, _pass].any((c) => c.text.trim().isEmpty)) {
-      setState(() => _error = 'Rellena servidor, usuario y contraseña');
+      setState(() => _error = AppLocalizations.of(context).errFillXtream);
       return;
     }
     final creds = XtreamCredentials(
@@ -72,15 +73,15 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
     return DefaultTabController(
       length: tv ? 2 : 3,
       child: AlertDialog(
-        title: const Text('Añadir fuente'),
+        title: Text(AppLocalizations.of(context).addSource),
         content: SizedBox(
           width: 460,
           height: 340,
           child: Column(
             children: [
               TabBar(tabs: [
-                const Tab(text: 'URL M3U'),
-                if (!tv) const Tab(text: 'Archivo'),
+                Tab(text: AppLocalizations.of(context).tabUrl),
+                if (!tv) Tab(text: AppLocalizations.of(context).tabFile),
                 const Tab(text: 'Xtream Codes'),
               ]),
               const SizedBox(height: 16),
@@ -91,18 +92,18 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
                       controller: _url,
                       keyboardType: TextInputType.url,
                       textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                          labelText: 'URL de la lista', border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).fieldListUrl, border: const OutlineInputBorder()),
                       onSubmitted: (_) => _submitUrl(),
                     ),
-                    FilledButton(onPressed: _submitUrl, child: const Text('Añadir lista')),
+                    FilledButton(onPressed: _submitUrl, child: Text(AppLocalizations.of(context).addList)),
                   ]),
                   if (!tv)
                     _Pane(children: [
-                      const Text('Selecciona un archivo .m3u / .m3u8 de tu equipo.'),
+                      Text(AppLocalizations.of(context).pickFileHint),
                       FilledButton.icon(
                         icon: const Icon(Icons.folder_open),
-                        label: const Text('Elegir archivo'),
+                        label: Text(AppLocalizations.of(context).pickFile),
                         onPressed: _pickFile,
                       ),
                     ]),
@@ -113,27 +114,27 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
                       controller: _host,
                       keyboardType: TextInputType.url,
                       textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                          labelText: 'Servidor (http://host:puerto)',
-                          border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).fieldServer,
+                          border: const OutlineInputBorder()),
                     ),
                     TextField(
                       controller: _user,
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       enableSuggestions: false,
-                      decoration: const InputDecoration(
-                          labelText: 'Usuario', border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).fieldUser, border: const OutlineInputBorder()),
                     ),
                     TextField(
                       controller: _pass,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                          labelText: 'Contraseña', border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).fieldPassword, border: const OutlineInputBorder()),
                       onSubmitted: (_) => _submitXtream(),
                     ),
-                    FilledButton(onPressed: _submitXtream, child: const Text('Conectar')),
+                    FilledButton(onPressed: _submitXtream, child: Text(AppLocalizations.of(context).connect)),
                   ]),
                 ]),
               ),
@@ -143,7 +144,7 @@ class _AddSourceDialogState extends ConsumerState<AddSourceDialog> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(AppLocalizations.of(context).commonCancel)),
         ],
       ),
     );

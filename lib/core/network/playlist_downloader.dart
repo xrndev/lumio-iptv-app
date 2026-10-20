@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../errors.dart';
+
 /// Descarga listas a disco en streaming (nunca a memoria) con reintentos.
 ///
 /// La copia vive en el directorio de datos de la app (no en temporales) para que,
@@ -46,6 +48,6 @@ class PlaylistDownloader {
     }
     if (await partial.exists()) await partial.delete();
     if (await file.exists()) return file; // sin red: última copia buena
-    throw HttpException('No se pudo descargar la lista: $lastError');
+    throw AppError(AppErrorCode.downloadFailed, '$lastError');
   }
 }

@@ -38,9 +38,9 @@ class SavedSource {
       case SourceType.xtream:
         return 'Xtream Codes · ${Uri.tryParse(location)?.host ?? location} ($username)';
       case SourceType.url:
-        return 'Lista M3U · ${Uri.tryParse(location)?.host ?? location}';
+        return 'M3U · ${Uri.tryParse(location)?.host ?? location}';
       case SourceType.file:
-        return 'Archivo · ${location.split(RegExp(r'[\\/]')).last}';
+        return 'M3U file · ${location.split(RegExp(r'[\\/]')).last}';
     }
   }
 

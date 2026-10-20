@@ -59,7 +59,7 @@ class CastController extends Notifier<CastState> {
     } catch (e) {
       debugPrint('Chromecast: $e');
       await stop();
-      state = const CastState(error: 'No se pudo conectar con el Chromecast.');
+      state = const CastState(error: 'connect_failed'); // sin texto: la UI no lo muestra
     }
   }
 

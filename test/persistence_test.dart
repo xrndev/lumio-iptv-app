@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lumio/core/errors.dart';
 import 'package:lumio/core/storage/source_store.dart';
 import 'package:lumio/features/playlists/playlist_providers.dart';
 
@@ -150,7 +151,7 @@ void main() {
     final store = MemorySourceStore(SavedSource.file(m3u));
     File(m3u).deleteSync(); // simula "sin red"/fichero ausente
     final c = _boot(store);
-    await expectLater(c.read(playlistProvider.future), throwsA(isA<FileSystemException>()));
+    await expectLater(c.read(playlistProvider.future), throwsA(isA<AppError>()));
     expect(store.value, isNotNull);
 
     File(m3u).writeAsStringSync('#EXTM3U\n#EXTINF:-1,Vuelve\nhttp://v\n');

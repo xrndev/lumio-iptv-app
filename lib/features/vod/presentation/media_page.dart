@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../core/library/library_data.dart';
 import '../../../core/models/media.dart';
+import '../../../l10n/error_text.dart';
 import '../../../design_system/theme/app_theme.dart';
 import '../../../design_system/widgets/cached_logo.dart';
 import '../../../design_system/widgets/focus_ring.dart';
@@ -20,18 +22,20 @@ class MediaPage extends ConsumerWidget {
 
   final MediaKind kind;
 
-  String get _title => kind == MediaKind.movies ? 'Películas' : 'Series';
+  String _title(AppLocalizations l) => kind == MediaKind.movies ? l.navMovies : l.navSeries;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final title = _title(l);
     final creds = ref.watch(xtreamCredentialsProvider);
 
     return GlassCard(
       child: creds == null
           ? _Info(
               icon: Icons.movie_filter_rounded,
-              text: '$_title requiere una cuenta Xtream Codes.\nLas listas M3U solo traen canales en vivo.',
-              action: 'Añadir cuenta Xtream',
+              text: l.mediaRequiresXtream(title),
+              action: l.addXtreamAccount,
               onAction: () => showAddSourceDialog(context),
             )
           : ref.watch(mediaCatalogProvider(kind)).when(
@@ -41,19 +45,19 @@ class MediaPage extends ConsumerWidget {
                     children: [
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
-                      Text('Cargando catálogo de ${_title.toLowerCase()}…'),
+                      Text(l.mediaLoading(title.toLowerCase())),
                     ],
                   ),
                 ),
                 error: (e, _) => _Info(
                   icon: Icons.error_outline_rounded,
-                  text: 'No se pudo cargar el catálogo:\n$e',
-                  action: 'Reintentar',
+                  text: l.catalogLoadError(localizedError(l, e)),
+                  action: l.commonRetry,
                   onAction: () => ref.invalidate(mediaCatalogProvider(kind)),
                 ),
                 data: (catalog) => catalog == null
                     ? const SizedBox.shrink()
-                    : _Browser(kind: kind, title: _title, catalog: catalog),
+                    : _Browser(kind: kind, title: title, catalog: catalog),
               ),
     );
   }
@@ -103,7 +107,7 @@ class _Browser extends ConsumerWidget {
                 child: TextField(
                   onChanged: (v) => ref.read(mediaSearchProvider(kind).notifier).state = v,
                   decoration: InputDecoration(
-                    hintText: 'Buscar en ${title.toLowerCase()}',
+                    hintText: AppLocalizations.of(context).mediaSearchHint(title.toLowerCase()),
                     prefixIcon: const Icon(Icons.search_rounded),
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     isDense: true,
@@ -118,7 +122,7 @@ class _Browser extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             children: [
               CategoryChip(
-                  label: 'Todas',
+                  label: AppLocalizations.of(context).chipAllCategories,
                   selected: selected == null,
                   onTap: () => ref.read(mediaGroupProvider(kind).notifier).state = null),
               for (final g in catalog.groups)
@@ -131,7 +135,7 @@ class _Browser extends ConsumerWidget {
         const SizedBox(height: 8),
         Expanded(
           child: items.isEmpty
-              ? Center(child: Text('Sin resultados', style: TextStyle(color: s.onSurfaceVariant)))
+              ? Center(child: Text(AppLocalizations.of(context).noResults, style: TextStyle(color: s.onSurfaceVariant)))
               : GridView.builder(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                   gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(

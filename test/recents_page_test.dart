@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lumio/l10n/app_localizations.dart';
 import 'package:lumio/core/models/channel.dart';
 import 'package:lumio/core/storage/source_store.dart';
 import 'package:lumio/features/home/presentation/recents_page.dart';
@@ -31,7 +32,12 @@ void main() {
     await t.runAsync(() => c.read(libraryProvider.future));
     await t.pumpWidget(UncontrolledProviderScope(
       container: c,
-      child: const MaterialApp(home: Scaffold(body: RecentsPage())),
+      child: const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: Locale('es'),
+        home: Scaffold(body: RecentsPage()),
+      ),
     ));
     return c;
   }

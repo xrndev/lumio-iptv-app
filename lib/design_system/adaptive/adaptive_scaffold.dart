@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../widgets/focus_ring.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/lumio_mark.dart';
@@ -22,12 +23,16 @@ class AdaptiveScaffold extends StatefulWidget {
     required this.selectedIndex,
     required this.onSelected,
     required this.body,
+    this.sidebarFooter,
   });
 
   final List<AdaptiveDestination> destinations;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final Widget body;
+
+  /// Extra al pie del sidebar (p. ej. selector de idioma); recibe si el menú está expandido.
+  final Widget Function(BuildContext context, bool extended)? sidebarFooter;
 
   @override
   State<AdaptiveScaffold> createState() => _AdaptiveScaffoldState();
@@ -71,6 +76,8 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
     }
 
     final extended = type.isExpanded && _sidebarExtended;
+    // Pantalla baja (p. ej. TV a 1080p con texto grande): filas más compactas y sin botón de contraer.
+    final short = MediaQuery.sizeOf(context).height < 640;
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
@@ -87,21 +94,31 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _Brand(extended: extended),
-                          const SizedBox(height: 16),
-                          for (var i = 0; i < widget.destinations.length; i++)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: _NavItem(
-                                dest: widget.destinations[i],
-                                selected: i == widget.selectedIndex,
-                                extended: extended,
-                                onTap: () => widget.onSelected(i),
-                              ),
+                          SizedBox(height: short ? 8 : 16),
+                          // Desplazable: en pantallas bajas (TV con texto grande) el pie
+                          // (idioma, contraer) debe seguir visible.
+                          Expanded(
+                            child: ListView(
+                              padding: EdgeInsets.zero,
+                              children: [
+                                for (var i = 0; i < widget.destinations.length; i++)
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: short ? 2 : 4),
+                                    child: _NavItem(
+                                      dest: widget.destinations[i],
+                                      selected: i == widget.selectedIndex,
+                                      dense: short,
+                                      extended: extended,
+                                      onTap: () => widget.onSelected(i),
+                                    ),
+                                  ),
+                              ],
                             ),
-                          const Spacer(),
-                          if (type.isExpanded)
+                          ),
+                          if (widget.sidebarFooter != null) widget.sidebarFooter!(context, extended),
+                          if (type.isExpanded && !short)
                             IconButton(
-                              tooltip: _sidebarExtended ? 'Contraer menú' : 'Expandir menú',
+                              tooltip: _sidebarExtended ? AppLocalizations.of(context).menuCollapse : AppLocalizations.of(context).menuExpand,
                               icon: Icon(_sidebarExtended
                                   ? Icons.keyboard_double_arrow_left_rounded
                                   : Icons.keyboard_double_arrow_right_rounded),
@@ -161,12 +178,14 @@ class _NavItem extends StatelessWidget {
     required this.extended,
     required this.onTap,
     this.stacked = false,
+    this.dense = false,
   });
 
   final AdaptiveDestination dest;
   final bool selected;
   final bool extended;
   final bool stacked;
+  final bool dense;
   final VoidCallback onTap;
 
   @override
@@ -200,7 +219,7 @@ class _NavItem extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 80), // ágil también en mandos de TV con CPU modesta
             constraints: const BoxConstraints(minHeight: 48),
-            padding: EdgeInsets.symmetric(horizontal: extended ? 14 : (stacked ? 0 : 8), vertical: stacked ? 8 : 12),
+            padding: EdgeInsets.symmetric(horizontal: extended ? 14 : (stacked ? 0 : 8), vertical: stacked ? 8 : (dense ? 8 : 12)),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               color: selected ? s.primary.withValues(alpha: 0.16) : Colors.transparent,

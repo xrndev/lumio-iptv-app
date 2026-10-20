@@ -79,6 +79,7 @@ Reglas de capas: `core` no importa `features` ni `design_system`. `features/*` p
 - Breakpoints (Material window size classes): compact < 600dp, medium 600–839dp, expanded ≥ 840dp. Siempre vía `ScreenType.of(context)`; no usar `MediaQuery.size.width` suelto. Modo TV se detecta aparte (`platform_channels`), no por ancho.
 - Accesibilidad obligatoria: zonas táctiles ≥ 48dp, `Semantics` en controles del reproductor, foco visible, todo operable con teclado/D-Pad, respetar `MediaQuery.textScaler`.
 - Reproductor: propiedades mpv vía `NativePlayer.setProperty` (`video-aspect-override`, `audio-delay`, `panscan`) solo en `PlayerEngine`.
+- Idiomas (es/en): **ningún texto visible en el código**; van en `lib/l10n/app_es.arb` (plantilla) y `app_en.arb`, se usan con `AppLocalizations.of(context)` y se regeneran con `flutter gen-l10n`. `core` no tiene textos de usuario: lanza `AppError(código)` / devuelve tipos (`AccountNotice`, `PlaybackNotice`) que la UI traduce en `lib/l10n/error_text.dart`. El idioma elegido (`lumio_locale.txt`, `features/settings/locale_providers.dart`) manda sobre el del sistema; selector `ES | EN` en el menú (`language_switcher.dart`). Los tests de widget/integración fijan `locale: es` (`MemoryLocaleStore`).
 - Tests: todo parser nuevo con test unitario + caso malformado. UI adaptativa: widget tests a 400, 700 y 1200dp de ancho.
 
 ## Agentes y skills del proyecto
