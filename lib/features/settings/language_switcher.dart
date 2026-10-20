@@ -82,8 +82,8 @@ class _Segment extends StatelessWidget {
                 border: Border.all(color: selected ? s.primary.withValues(alpha: 0.45) : Colors.transparent),
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.translate_rounded, size: 16, color: selected ? s.primary : s.onSurfaceVariant),
-                const SizedBox(width: 4),
+                _Flag(code: code, dimmed: !selected),
+                const SizedBox(width: 6),
                 Text(code.toUpperCase(),
                     style: TextStyle(
                       fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
@@ -96,4 +96,85 @@ class _Segment extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Bandera del idioma, dibujada (los emojis de bandera no salen en Windows ni en todas las TV).
+/// `es` → España, `en` → Reino Unido.
+class _Flag extends StatelessWidget {
+  const _Flag({required this.code, required this.dimmed});
+
+  final String code;
+  final bool dimmed;
+
+  @override
+  Widget build(BuildContext context) {
+    final painter = switch (code) {
+      'es' => const _SpainPainter(),
+      'en' => const _UkPainter(),
+      _ => null,
+    };
+    if (painter == null) return const Icon(Icons.translate_rounded, size: 16);
+    return Opacity(
+      opacity: dimmed ? 0.6 : 1,
+      child: Container(
+        width: 24,
+        height: 16,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(3),
+          border: Border.all(color: Colors.white24, width: 0.5),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(2.5),
+          child: CustomPaint(painter: painter),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpainPainter extends CustomPainter {
+  const _SpainPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final red = Paint()..color = const Color(0xFFAA151B);
+    final yellow = Paint()..color = const Color(0xFFF1BF00);
+    final h = size.height;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, h * 0.25), red);
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.25, size.width, h * 0.5), yellow);
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.75, size.width, h * 0.25), red);
+  }
+
+  @override
+  bool shouldRepaint(_SpainPainter old) => false;
+}
+
+class _UkPainter extends CustomPainter {
+  const _UkPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    Paint stroke(Color c, double width) => Paint()
+      ..color = c
+      ..strokeWidth = width
+      ..style = PaintingStyle.stroke;
+    const white = Colors.white, red = Color(0xFFC8102E);
+
+    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFF012169));
+    // Aspas (diagonales): blanca ancha y roja fina encima.
+    for (final width in [h * 0.22, h * 0.09]) {
+      final p = stroke(width == h * 0.22 ? white : red, width);
+      canvas.drawLine(Offset.zero, Offset(w, h), p);
+      canvas.drawLine(Offset(w, 0), Offset(0, h), p);
+    }
+    // Cruz: blanca ancha y roja fina encima.
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.5 - h * 0.17, w, h * 0.34), Paint()..color = white);
+    canvas.drawRect(Rect.fromLTWH(w * 0.5 - h * 0.17, 0, h * 0.34, h), Paint()..color = white);
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.5 - h * 0.1, w, h * 0.2), Paint()..color = red);
+    canvas.drawRect(Rect.fromLTWH(w * 0.5 - h * 0.1, 0, h * 0.2, h), Paint()..color = red);
+  }
+
+  @override
+  bool shouldRepaint(_UkPainter old) => false;
 }
