@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lumio/core/errors.dart';
 import 'package:lumio/core/network/xtream_client.dart';
 
 /// Servidor falso: cuenta peticiones y puede fallar a voluntad.
@@ -62,6 +63,6 @@ void main() {
 
   test('sin copia y sin red, falla', () async {
     fake.fail = true;
-    await expectLater(client.loadMovies(creds), throwsA(isA<StateError>()));
+    await expectLater(client.loadMovies(creds), throwsA(isA<AppError>()));
   });
 }

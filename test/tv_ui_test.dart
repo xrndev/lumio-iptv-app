@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lumio/l10n/app_localizations.dart';
 import 'package:lumio/app.dart';
 import 'package:lumio/design_system/theme/app_theme.dart';
 import 'package:lumio/features/playlists/presentation/add_source_dialog.dart';
@@ -8,7 +9,10 @@ import 'package:lumio/platform_channels/tv_provider.dart';
 
 Widget _dialog({required bool tv}) => ProviderScope(
       overrides: [isTelevisionProvider.overrideWith((ref) async => tv)],
-      child: MaterialApp(theme: AppTheme.dark(), home: const Scaffold(body: AddSourceDialog())),
+      child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: const Locale('es'),
+          theme: AppTheme.dark(),
+          home: const Scaffold(body: AddSourceDialog())),
     );
 
 void main() {

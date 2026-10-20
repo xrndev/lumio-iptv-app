@@ -28,13 +28,16 @@ enum AspectMode {
 
 enum PlaybackPhase { idle, loading, retrying, playing, failed }
 
+/// Mensaje de estado; la UI lo traduce.
+enum PlaybackNotice { none, reconnecting, tryingFormat, openFailed }
+
 class PlaybackStatus {
-  const PlaybackStatus(this.phase, this.message, [this.detail = '']);
-  static const idle = PlaybackStatus(PlaybackPhase.idle, '');
-  static const playing = PlaybackStatus(PlaybackPhase.playing, '');
+  const PlaybackStatus(this.phase, [this.notice = PlaybackNotice.none, this.detail = '']);
+  static const idle = PlaybackStatus(PlaybackPhase.idle);
+  static const playing = PlaybackStatus(PlaybackPhase.playing);
 
   final PlaybackPhase phase;
-  final String message;
+  final PlaybackNotice notice;
 
   /// Motivo técnico (ya sin credenciales) para diagnosticar; vacío si no se conoce.
   final String detail;
@@ -170,16 +173,16 @@ class PlayerEngine {
 
     switch (recovery.onFailure()) {
       case RecoveryAction.retrySame:
-        status.value = const PlaybackStatus(PlaybackPhase.retrying, 'Reconectando…');
+        status.value = const PlaybackStatus(PlaybackPhase.retrying, PlaybackNotice.reconnecting);
         await Future<void>.delayed(PlaybackRecovery.retryDelay);
         if (generation == _generation) await _open(channel.url, channel, generation);
       case RecoveryAction.tryAlternate:
-        status.value = const PlaybackStatus(PlaybackPhase.retrying, 'Probando otro formato…');
+        status.value = const PlaybackStatus(PlaybackPhase.retrying, PlaybackNotice.tryingFormat);
         if (generation == _generation) await _open(channel.altUrl!, channel, generation);
       case RecoveryAction.giveUp:
         status.value = PlaybackStatus(
           PlaybackPhase.failed,
-          'No se pudo abrir este contenido. Puede estar caído en tu proveedor.',
+          PlaybackNotice.openFailed,
           sanitizeIssue(_lastIssue ?? ''),
         );
     }
@@ -209,7 +212,7 @@ class PlayerEngine {
     _startAt = startAt;
     _recovery = PlaybackRecovery(hasAlternate: channel.altUrl != null);
     _lastIssue = null;
-    status.value = const PlaybackStatus(PlaybackPhase.loading, '');
+    status.value = const PlaybackStatus(PlaybackPhase.loading);
     if (hadStream) {
       // Con una sola conexión permitida, soltar la anterior antes de pedir la nueva.
       await player.stop();

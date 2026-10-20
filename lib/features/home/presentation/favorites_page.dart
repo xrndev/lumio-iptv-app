@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../core/library/library_data.dart';
 import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
@@ -40,7 +41,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
         slivers: [
           SliverToBoxAdapter(child: _Header(onSync: () => showLibrarySyncDialog(context))),
           if (cont.isNotEmpty) ...[
-            const SliverToBoxAdapter(child: _SectionTitle('Continuar viendo')),
+            SliverToBoxAdapter(child: _SectionTitle(AppLocalizations.of(context).continueWatching)),
             SliverToBoxAdapter(
               child: WheelScrollRow(
                 height: 292,
@@ -49,7 +50,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
               ),
             ),
           ],
-          const SliverToBoxAdapter(child: _SectionTitle('Mis favoritos')),
+          SliverToBoxAdapter(child: _SectionTitle(AppLocalizations.of(context).myFavorites)),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -60,7 +61,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                     ButtonSegment(
                       value: k,
                       icon: Icon(_icon(k)),
-                      label: Text('${_label(k)} (${lib.favoriteUids(k).length})'),
+                      label: Text('${_label(AppLocalizations.of(context), k)} (${lib.favoriteUids(k).length})'),
                     ),
                 ],
                 selected: {_kind},
@@ -81,10 +82,10 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
         LibraryKind.series => Icons.video_library_rounded,
       };
 
-  static String _label(LibraryKind k) => switch (k) {
-        LibraryKind.channel => 'Canales',
-        LibraryKind.movie => 'Películas',
-        LibraryKind.series => 'Series',
+  static String _label(AppLocalizations l, LibraryKind k) => switch (k) {
+        LibraryKind.channel => l.kindChannels,
+        LibraryKind.movie => l.navMovies,
+        LibraryKind.series => l.navSeries,
       };
 
   List<Widget> _content(SourceLibrary lib, Map<String, Channel> channels) {
@@ -92,7 +93,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 
     if (_kind == LibraryKind.channel) {
       final items = [for (final u in uids) if (channels[u] != null) channels[u]!];
-      if (items.isEmpty) return [_Empty(uids.isEmpty ? _hint(_kind) : 'Tus favoritos no están en la lista actual.')];
+      if (items.isEmpty) return [_Empty(uids.isEmpty ? _hint(AppLocalizations.of(context), _kind) : AppLocalizations.of(context).favoritesNotInList)];
       return [
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -113,12 +114,12 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     final kind = _kind == LibraryKind.movie ? MediaKind.movies : MediaKind.series;
     final catalog = ref.watch(mediaCatalogProvider(kind));
     final byUid = ref.watch(mediaByUidProvider(kind));
-    if (uids.isEmpty) return [_Empty(_hint(_kind))];
+    if (uids.isEmpty) return [_Empty(_hint(AppLocalizations.of(context), _kind))];
     if (catalog.isLoading && byUid.isEmpty) {
       return const [SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())))];
     }
     final items = [for (final u in uids) if (byUid[u] != null) byUid[u]!];
-    if (items.isEmpty) return const [_Empty('Tus favoritos no están en el catálogo actual.')];
+    if (items.isEmpty) return [_Empty(AppLocalizations.of(context).favoritesNotInCatalog)];
 
     return [
       SliverPadding(
@@ -138,10 +139,10 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     ];
   }
 
-  static String _hint(LibraryKind k) => switch (k) {
-        LibraryKind.channel => 'Aún no tienes canales favoritos.\nPulsa la ☆ de cualquier canal para guardarlo aquí.',
-        LibraryKind.movie => 'Aún no tienes películas favoritas.\nPulsa la ☆ de un póster para guardarla aquí.',
-        LibraryKind.series => 'Aún no tienes series favoritas.\nPulsa la ☆ de un póster para guardarla aquí.',
+  static String _hint(AppLocalizations l, LibraryKind k) => switch (k) {
+        LibraryKind.channel => l.emptyFavoritesChannels,
+        LibraryKind.movie => l.emptyFavoritesMovies,
+        LibraryKind.series => l.emptyFavoritesSeries,
       };
 }
 
@@ -155,11 +156,11 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 18, 12, 4),
       child: Row(
         children: [
-          Text('Favoritos',
+          Text(AppLocalizations.of(context).navFavorites,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
           const Spacer(),
           IconButton.filledTonal(
-            tooltip: 'Pasar a otro dispositivo',
+            tooltip: AppLocalizations.of(context).transferTooltip,
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             icon: const Icon(Icons.sync_alt_rounded),
             onPressed: onSync,
@@ -207,7 +208,7 @@ class _ContinueCard extends ConsumerWidget {
     final creds = ref.read(xtreamCredentialsProvider);
     if (creds == null) {
       ScaffoldMessenger.maybeOf(context)
-          ?.showSnackBar(const SnackBar(content: Text('Añade tu cuenta Xtream para reanudar.')));
+          ?.showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).resumeNeedsXtream)));
       return;
     }
     final url = entry.isEpisode
@@ -278,7 +279,7 @@ class _ContinueCard extends ConsumerWidget {
                           child: LinearProgressIndicator(
                             value: entry.fraction,
                             minHeight: 5,
-                            semanticsLabel: 'Progreso',
+                            semanticsLabel: AppLocalizations.of(context).commonProgress,
                             backgroundColor: Colors.black54,
                           ),
                         ),
@@ -287,7 +288,7 @@ class _ContinueCard extends ConsumerWidget {
                         top: 4,
                         right: 4,
                         child: IconButton(
-                          tooltip: 'Quitar de "Continuar viendo"',
+                          tooltip: AppLocalizations.of(context).removeFromContinue,
                           constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                           style: IconButton.styleFrom(backgroundColor: Colors.black54, padding: EdgeInsets.zero),
                           iconSize: 18,
@@ -302,7 +303,7 @@ class _ContinueCard extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(cleanTitle(entry.title),
                     maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                Text(entry.subtitle.isEmpty ? 'Película' : entry.subtitle,
+                Text(entry.subtitle.isEmpty ? AppLocalizations.of(context).movieLabel : entry.subtitle,
                     maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: s.onSurfaceVariant, fontSize: 12)),
               ],
             ),

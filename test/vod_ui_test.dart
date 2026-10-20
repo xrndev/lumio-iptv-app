@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lumio/l10n/app_localizations.dart';
 import 'package:lumio/core/models/channel.dart';
 import 'package:lumio/core/models/media.dart';
 import 'package:lumio/core/network/xtream_client.dart';
@@ -54,7 +55,10 @@ List<Override> _overrides() => [
 
 Widget _app(Widget home, {List<Override>? overrides}) => ProviderScope(
       overrides: overrides ?? _overrides(),
-      child: MaterialApp(theme: AppTheme.dark(), home: Scaffold(body: home)),
+      child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales, locale: const Locale('es'),
+          theme: AppTheme.dark(),
+          home: Scaffold(body: home)),
     );
 
 void _size(WidgetTester t, double w, double h) {

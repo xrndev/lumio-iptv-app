@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../library_providers.dart';
 
 Future<void> showLibrarySyncDialog(BuildContext context) =>
@@ -35,7 +36,7 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
     if (!mounted) return;
     setState(() {
       _ok = true;
-      _message = 'Código copiado. Pégalo en el otro dispositivo, en Importar.';
+      _message = AppLocalizations.of(context).syncCodeCopied;
     });
   }
 
@@ -50,10 +51,9 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
     setState(() {
       _ok = result == ImportResult.merged;
       _message = switch (result) {
-        ImportResult.merged => 'Listo: favoritos, recientes y progreso fusionados.',
-        ImportResult.otherSource =>
-          'Ese código es de otra cuenta. Añade la misma cuenta en este dispositivo y vuelve a intentarlo.',
-        ImportResult.invalidCode => 'El código no es válido. Cópialo entero desde el otro dispositivo.',
+        ImportResult.merged => AppLocalizations.of(context).syncMerged,
+        ImportResult.otherSource => AppLocalizations.of(context).syncOtherAccount,
+        ImportResult.invalidCode => AppLocalizations.of(context).syncInvalidCode,
       };
     });
   }
@@ -62,7 +62,7 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
     return AlertDialog(
-      title: const Text('Pasar a otro dispositivo'),
+      title: Text(AppLocalizations.of(context).syncTitle),
       content: SizedBox(
         width: 460,
         child: SingleChildScrollView(
@@ -70,10 +70,10 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('1. En este dispositivo',
+              Text(AppLocalizations.of(context).syncStep1,
                   style: TextStyle(fontWeight: FontWeight.w700, color: s.onSurface)),
               const SizedBox(height: 4),
-              Text('Copia un código con tus favoritos, canales recientes y películas a medias.',
+              Text(AppLocalizations.of(context).syncStep1Desc,
                   style: TextStyle(color: s.onSurfaceVariant)),
               const SizedBox(height: 8),
               Align(
@@ -81,14 +81,14 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
                 child: FilledButton.tonalIcon(
                   onPressed: _copy,
                   icon: const Icon(Icons.copy_rounded),
-                  label: const Text('Copiar código'),
+                  label: Text(AppLocalizations.of(context).syncCopyCode),
                 ),
               ),
               const Divider(height: 32),
-              Text('2. En el otro dispositivo',
+              Text(AppLocalizations.of(context).syncStep2,
                   style: TextStyle(fontWeight: FontWeight.w700, color: s.onSurface)),
               const SizedBox(height: 4),
-              Text('Con la misma cuenta añadida, pega aquí el código.',
+              Text(AppLocalizations.of(context).syncStep2Desc,
                   style: TextStyle(color: s.onSurfaceVariant)),
               const SizedBox(height: 8),
               TextField(
@@ -98,7 +98,7 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
                 decoration: InputDecoration(
                   hintText: 'LUMIO1.…',
                   suffixIcon: IconButton(
-                    tooltip: 'Pegar',
+                    tooltip: AppLocalizations.of(context).syncPaste,
                     icon: const Icon(Icons.content_paste_rounded),
                     onPressed: _paste,
                   ),
@@ -107,7 +107,7 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
               const SizedBox(height: 8),
               Align(
                 alignment: Alignment.centerLeft,
-                child: FilledButton(onPressed: _import, child: const Text('Importar')),
+                child: FilledButton(onPressed: _import, child: Text(AppLocalizations.of(context).syncImport)),
               ),
               if (_message != null) ...[
                 const SizedBox(height: 12),
@@ -118,7 +118,7 @@ class _LibrarySyncDialogState extends ConsumerState<LibrarySyncDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar')),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(AppLocalizations.of(context).commonClose)),
       ],
     );
   }

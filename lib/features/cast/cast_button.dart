@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../core/models/channel.dart';
 import '../../platform_channels/tv_provider.dart';
 import '../player/player_providers.dart';
@@ -19,7 +20,7 @@ class CastButton extends ConsumerWidget {
     if (tv || kIsWeb) return const SizedBox.shrink();
     final cast = ref.watch(castControllerProvider);
     return IconButton(
-      tooltip: cast.casting ? 'Emitiendo en ${cast.device!.name}' : 'Emitir a Chromecast',
+      tooltip: cast.casting ? AppLocalizations.of(context).castTooltipActive(cast.device!.name) : AppLocalizations.of(context).castTooltip,
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
       color: cast.casting ? Theme.of(context).colorScheme.primary : Colors.white,
       icon: Icon(cast.casting ? Icons.cast_connected_rounded : Icons.cast_rounded),
@@ -61,25 +62,24 @@ class _CastDialogState extends ConsumerState<CastDialog> {
   Widget build(BuildContext context) {
     final cast = ref.watch(castControllerProvider);
     return AlertDialog(
-      title: const Text('Emitir a Chromecast'),
+      title: Text(AppLocalizations.of(context).castTooltip),
       content: SizedBox(
         width: 380,
         child: cast.casting
-            ? Text('Emitiendo en ${cast.device!.name}.')
+            ? Text(AppLocalizations.of(context).castActive(cast.device!.name))
             : FutureBuilder<List<CastDevice>>(
                 future: _devices,
                 builder: (context, snap) {
                   if (snap.connectionState != ConnectionState.done) {
-                    return const Row(children: [
-                      SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                      SizedBox(width: 12),
-                      Text('Buscando dispositivos…'),
+                    return Row(children: [
+                      const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                      const SizedBox(width: 12),
+                      Text(AppLocalizations.of(context).castSearching),
                     ]);
                   }
                   final list = snap.data ?? const <CastDevice>[];
                   if (snap.hasError || list.isEmpty) {
-                    return const Text(
-                        'No se ha encontrado ningún Chromecast. Comprueba que está encendido y en la misma red Wi-Fi.');
+                    return Text(AppLocalizations.of(context).castNone);
                   }
                   return Column(mainAxisSize: MainAxisSize.min, children: [
                     for (final d in list)
@@ -99,9 +99,9 @@ class _CastDialogState extends ConsumerState<CastDialog> {
               Navigator.of(context).pop();
               await ref.read(castControllerProvider.notifier).stop();
             },
-            child: const Text('Dejar de emitir'),
+            child: Text(AppLocalizations.of(context).castStop),
           ),
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cerrar')),
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(AppLocalizations.of(context).commonClose)),
       ],
     );
   }

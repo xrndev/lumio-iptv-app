@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/models/channel.dart';
 import '../../../core/network/xtream_client.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../l10n/error_text.dart';
 import '../../../core/util/channel_names.dart';
 import '../../../design_system/theme/app_theme.dart';
 import '../../../design_system/widgets/wheel_scroll_row.dart';
@@ -24,17 +26,17 @@ class ChannelListPane extends ConsumerWidget {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => _Message(
         icon: Icons.error_outline_rounded,
-        text: 'No se pudo cargar la fuente:\n${_clean(e)}',
-        action: 'Reintentar',
+        text: AppLocalizations.of(context).sourceLoadError(localizedError(AppLocalizations.of(context), e)),
+        action: AppLocalizations.of(context).commonRetry,
         onAction: () => ref.invalidate(playlistProvider),
-        secondaryAction: 'Probar otra fuente',
+        secondaryAction: AppLocalizations.of(context).tryAnotherSource,
       ),
       data: (data) {
         if (data == null) {
-          return const _Message(
+          return _Message(
             icon: Icons.playlist_add_rounded,
-            text: 'Añade una lista M3U, un archivo o una cuenta Xtream Codes.',
-            action: 'Añadir fuente',
+            text: AppLocalizations.of(context).addSourceHint,
+            action: AppLocalizations.of(context).addSource,
           );
         }
         return Column(
@@ -51,8 +53,6 @@ class ChannelListPane extends ConsumerWidget {
     );
   }
 
-  static String _clean(Object e) =>
-      e.toString().replaceFirst(RegExp(r'^(Bad state|Exception|FormatException): '), '');
 }
 
 class _Header extends ConsumerWidget {
@@ -67,7 +67,7 @@ class _Header extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
       child: Row(
         children: [
-          Text('En vivo',
+          Text(AppLocalizations.of(context).navLive,
               style: Theme.of(context)
                   .textTheme
                   .headlineSmall
@@ -84,7 +84,7 @@ class _Header extends ConsumerWidget {
           ),
           const Spacer(),
           IconButton.filledTonal(
-            tooltip: 'Añadir fuente',
+            tooltip: AppLocalizations.of(context).addSource,
             constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             icon: const Icon(Icons.add_rounded),
             onPressed: () => showAddSourceDialog(context),
@@ -104,10 +104,10 @@ class _SearchField extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: TextField(
         onChanged: (v) => ref.read(channelSearchProvider.notifier).state = v,
-        decoration: const InputDecoration(
-          hintText: 'Buscar canal',
-          prefixIcon: Icon(Icons.search_rounded),
-          contentPadding: EdgeInsets.symmetric(vertical: 14),
+        decoration: InputDecoration(
+          hintText: AppLocalizations.of(context).searchChannelHint,
+          prefixIcon: const Icon(Icons.search_rounded),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
           isDense: true,
         ),
       ),
@@ -127,7 +127,7 @@ class _GroupChips extends ConsumerWidget {
     return WheelScrollRow(
       children: [
         CategoryChip(
-            label: 'Todos',
+            label: AppLocalizations.of(context).chipAllChannels,
             selected: selected == null,
             onTap: () => ref.read(selectedGroupProvider.notifier).state = null),
         for (final g in groups)
@@ -162,7 +162,7 @@ class _AccountBanner extends ConsumerWidget {
           child: Row(children: [
             Icon(Icons.warning_amber_rounded, color: s.onErrorContainer, size: 20),
             const SizedBox(width: 8),
-            Expanded(child: Text(notice, style: TextStyle(color: s.onErrorContainer, fontSize: 13))),
+            Expanded(child: Text(accountNoticeText(AppLocalizations.of(context), notice), style: TextStyle(color: s.onErrorContainer, fontSize: 13))),
           ]),
         ),
       ),

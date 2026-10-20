@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/epg/epg.dart';
+import '../../core/errors.dart';
 import '../../core/models/channel.dart';
 import '../../core/network/playlist_downloader.dart';
 import '../../core/util/channel_names.dart';
@@ -103,7 +104,7 @@ class PlaylistController extends AsyncNotifier<M3uPlaylist?> {
         return _Opened(await M3uParser.parseFile(file.path));
       case SourceType.file:
         if (!await File(s.location).exists()) {
-          throw FileSystemException('El archivo ya no existe', s.location);
+          throw const AppError(AppErrorCode.fileMissing);
         }
         return _Opened(await M3uParser.parseFile(s.location));
       case SourceType.xtream:

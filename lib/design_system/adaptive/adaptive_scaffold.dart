@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../widgets/focus_ring.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/lumio_mark.dart';
@@ -22,12 +23,16 @@ class AdaptiveScaffold extends StatefulWidget {
     required this.selectedIndex,
     required this.onSelected,
     required this.body,
+    this.sidebarFooter,
   });
 
   final List<AdaptiveDestination> destinations;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
   final Widget body;
+
+  /// Extra al pie del sidebar (p. ej. selector de idioma); recibe si el menú está expandido.
+  final Widget Function(BuildContext context, bool extended)? sidebarFooter;
 
   @override
   State<AdaptiveScaffold> createState() => _AdaptiveScaffoldState();
@@ -99,9 +104,10 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                               ),
                             ),
                           const Spacer(),
+                          if (widget.sidebarFooter != null) widget.sidebarFooter!(context, extended),
                           if (type.isExpanded)
                             IconButton(
-                              tooltip: _sidebarExtended ? 'Contraer menú' : 'Expandir menú',
+                              tooltip: _sidebarExtended ? AppLocalizations.of(context).menuCollapse : AppLocalizations.of(context).menuExpand,
                               icon: Icon(_sidebarExtended
                                   ? Icons.keyboard_double_arrow_left_rounded
                                   : Icons.keyboard_double_arrow_right_rounded),

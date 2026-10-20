@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
+import '../../../l10n/error_text.dart';
 import '../../../core/library/library_data.dart';
 import '../../../core/models/channel.dart';
 import '../../../core/models/media.dart';
@@ -63,7 +65,7 @@ class _DetailScaffold extends StatelessWidget {
                   top: 8,
                   left: 8,
                   child: IconButton.filledTonal(
-                    tooltip: 'Volver',
+                    tooltip: AppLocalizations.of(context).commonBack,
                     constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     icon: const Icon(Icons.arrow_back_rounded),
                     onPressed: () => Navigator.of(context).maybePop(),
@@ -199,15 +201,15 @@ class MovieDetailPage extends ConsumerWidget {
               if (detail != null && detail.duration.isNotEmpty) _Chip(Icons.schedule_rounded, detail.duration),
               if (detail != null && detail.genre.isNotEmpty) _Chip(Icons.theater_comedy_rounded, detail.genre),
               if (item.group.isNotEmpty) _Chip(Icons.folder_outlined, prettyGroupName(item.group)),
-              if (progress?.finished ?? false) const _Chip(Icons.check_circle_outline_rounded, 'Visto'),
+              if (progress?.finished ?? false) _Chip(Icons.check_circle_outline_rounded, AppLocalizations.of(context).commonWatched),
             ]),
             const SizedBox(height: 20),
             Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
               if (resumeAt != null) ...[
-                _PlayButton(label: 'Continuar · ${formatClock(resumeAt)}', onPressed: () => play(startAt: resumeAt)),
-                OutlinedButton(onPressed: () => play(), child: const Text('Desde el principio')),
+                _PlayButton(label: AppLocalizations.of(context).continueAt(formatClock(resumeAt)), onPressed: () => play(startAt: resumeAt)),
+                OutlinedButton(onPressed: () => play(), child: Text(AppLocalizations.of(context).fromStart)),
               ] else
-                _PlayButton(label: 'Reproducir', onPressed: play),
+                _PlayButton(label: AppLocalizations.of(context).play, onPressed: play),
               FavoriteButton(kind: LibraryKind.movie, uid: item.uid, size: 28),
             ]),
             const SizedBox(height: 24),
@@ -215,18 +217,18 @@ class MovieDetailPage extends ConsumerWidget {
               const LinearProgressIndicator()
             else ...[
               Text(
-                (detail?.plot.isNotEmpty ?? false) ? detail!.plot : 'Sin sinopsis disponible.',
+                (detail?.plot.isNotEmpty ?? false) ? detail!.plot : AppLocalizations.of(context).noPlot,
                 style: const TextStyle(height: 1.5, fontSize: 15),
               ),
               if (detail != null && detail.cast.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('Reparto', style: TextStyle(color: s.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(AppLocalizations.of(context).castLabel, style: TextStyle(color: s.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(detail.cast, style: const TextStyle(height: 1.4)),
               ],
               if (detail != null && detail.director.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text('Dirección', style: TextStyle(color: s.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(AppLocalizations.of(context).directorLabel, style: TextStyle(color: s.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(detail.director),
               ],
@@ -278,9 +280,9 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
       ref,
       Channel(
         index: -1,
-        name: '$series · T${e.season} E${e.number}',
+        name: AppLocalizations.of(context).episodeName(series, e.season, e.number),
         url: XtreamClient.episodeUrl(creds, e),
-        group: cleanEpisodeTitle(e, widget.item),
+        group: cleanEpisodeTitle(AppLocalizations.of(context), e, widget.item),
         isLive: false,
         stableId: 'e${e.id}',
         media: MediaMeta(
@@ -289,7 +291,7 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
           ext: e.ext,
           title: series,
           poster: widget.item.poster,
-          subtitle: 'Temporada ${e.season} · Episodio ${e.number}',
+          subtitle: AppLocalizations.of(context).seasonEpisode(e.season, e.number),
           seriesId: widget.item.id,
         ),
       ),
@@ -331,22 +333,22 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
           if (item.rating != null) _Chip(Icons.star_rounded, item.rating!.toStringAsFixed(1)),
           if (item.year.isNotEmpty) _Chip(Icons.calendar_today_rounded, item.year),
           if (item.genre.isNotEmpty) _Chip(Icons.theater_comedy_rounded, item.genre),
-          if (seasons.isNotEmpty) _Chip(Icons.layers_rounded, '${seasons.length} temporadas'),
+          if (seasons.isNotEmpty) _Chip(Icons.layers_rounded, AppLocalizations.of(context).seasonsCount(seasons.length)),
         ]),
         const SizedBox(height: 16),
         Wrap(spacing: 12, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
           if (resume != null)
             _PlayButton(
-              label: 'Continuar T${resume.$1.season} E${resume.$1.number} · ${formatClock(resume.$2.resumeAt!)}',
+              label: AppLocalizations.of(context).continueEpisode(resume.$1.season, resume.$1.number, formatClock(resume.$2.resumeAt!)),
               onPressed: () => _play(resume.$1, startAt: resume.$2.resumeAt),
             ),
           FavoriteButton(kind: LibraryKind.series, uid: item.uid, size: 28),
         ]),
         const SizedBox(height: 16),
-        Text(plot.isEmpty ? 'Sin sinopsis disponible.' : plot, style: const TextStyle(height: 1.5, fontSize: 15)),
+        Text(plot.isEmpty ? AppLocalizations.of(context).noPlot : plot, style: const TextStyle(height: 1.5, fontSize: 15)),
         if (detail != null && detail.cast.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Text('Reparto', style: TextStyle(color: s.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(AppLocalizations.of(context).castLabel, style: TextStyle(color: s.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(detail.cast),
         ],
@@ -375,16 +377,16 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
             if (async.isLoading && detail == null)
               const LinearProgressIndicator()
             else if (async.hasError)
-              Text('No se pudieron cargar los episodios: ${async.error}')
+              Text(AppLocalizations.of(context).episodesLoadError(localizedError(AppLocalizations.of(context), async.error!)))
             else if (seasons.isEmpty)
-              const Text('Esta serie no tiene episodios disponibles.')
+              Text(AppLocalizations.of(context).noEpisodes)
             else ...[
               WheelScrollRow(
                 padding: EdgeInsets.zero,
                 children: [
                   for (final n in seasons.keys)
                     CategoryChip(
-                      label: 'Temporada $n',
+                      label: AppLocalizations.of(context).seasonN(n),
                       selected: n == current,
                       onTap: () => setState(() => _season = n),
                     ),
@@ -408,12 +410,12 @@ class _SeriesDetailPageState extends ConsumerState<SeriesDetailPage> {
 }
 
 /// "Serie - S01E01 - Episode 1" → "Episode 1".
-String cleanEpisodeTitle(Episode e, SeriesItem series) {
+String cleanEpisodeTitle(AppLocalizations l, Episode e, SeriesItem series) {
   var t = e.title;
   final m = RegExp(r'S\d+E\d+\s*[-–]\s*(.+)$', caseSensitive: false).firstMatch(t);
   if (m != null) t = m.group(1)!;
   t = t.trim();
-  return t.isEmpty ? 'Episodio ${e.number}' : t;
+  return t.isEmpty ? l.episodeN(e.number) : t;
 }
 
 class _EpisodeTile extends StatelessWidget {
@@ -463,7 +465,7 @@ class _EpisodeTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(cleanEpisodeTitle(episode, series),
+                      Text(cleanEpisodeTitle(AppLocalizations.of(context), episode, series),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -480,7 +482,7 @@ class _EpisodeTile extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: progress!.fraction,
                               minHeight: 4,
-                              semanticsLabel: 'Progreso del episodio',
+                              semanticsLabel: AppLocalizations.of(context).episodeProgress,
                             ),
                           ),
                         ),
@@ -495,7 +497,7 @@ class _EpisodeTile extends StatelessWidget {
                 const SizedBox(width: 8),
                 if (progress?.finished ?? false)
                   Tooltip(
-                    message: 'Visto',
+                    message: AppLocalizations.of(context).commonWatched,
                     child: Icon(Icons.check_circle_rounded, color: s.secondary, size: 32),
                   )
                 else

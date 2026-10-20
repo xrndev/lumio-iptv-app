@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../core/library/library_data.dart';
 import '../library_providers.dart';
 
@@ -37,10 +38,10 @@ class FavoriteButton extends ConsumerWidget {
     return Semantics(
       button: true,
       toggled: fav,
-      label: fav ? 'Quitar de favoritos' : 'Añadir a favoritos',
+      label: fav ? AppLocalizations.of(context).favRemove : AppLocalizations.of(context).favAdd,
       excludeSemantics: true,
       child: IconButton(
-        tooltip: fav ? 'Quitar de favoritos' : 'Añadir a favoritos',
+        tooltip: fav ? AppLocalizations.of(context).favRemove : AppLocalizations.of(context).favAdd,
         constraints: overlay
             ? const BoxConstraints(minWidth: 36, minHeight: 36)
             : const BoxConstraints(minWidth: 48, minHeight: 48),
@@ -65,8 +66,8 @@ class FavoriteButton extends ConsumerWidget {
       ..showSnackBar(SnackBar(
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
-        content: Text(wasFavorite ? 'Quitado de favoritos' : 'Añadido a favoritos'),
-        action: SnackBarAction(label: 'Deshacer', onPressed: () => notifier.toggleFavorite(kind, uid)),
+        content: Text(wasFavorite ? AppLocalizations.of(context).favRemoved : AppLocalizations.of(context).favAdded),
+        action: SnackBarAction(label: AppLocalizations.of(context).undo, onPressed: () => notifier.toggleFavorite(kind, uid)),
       ));
   }
 }

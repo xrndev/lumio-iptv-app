@@ -15,10 +15,12 @@ import 'package:integration_test/integration_test.dart';
 import 'package:lumio/app.dart';
 import 'package:lumio/core/models/media.dart';
 import 'package:lumio/core/network/xtream_client.dart';
+import 'package:lumio/core/storage/locale_store.dart';
 import 'package:lumio/core/storage/source_store.dart';
 import 'package:lumio/core/library/library_data.dart';
 import 'package:lumio/features/library/library_providers.dart';
 import 'package:lumio/features/playlists/playlist_providers.dart';
+import 'package:lumio/features/settings/locale_providers.dart';
 import 'package:lumio/features/vod/vod_providers.dart';
 import 'package:media_kit/media_kit.dart';
 
@@ -85,6 +87,7 @@ void main() {
 
     final container = ProviderContainer(overrides: [
       sourceStoreProvider.overrideWithValue(MemorySourceStore()),
+      localeStoreProvider.overrideWithValue(MemoryLocaleStore('es')),
       // Biblioteca en un fichero temporal: nunca se toca la del usuario.
       libraryFileProvider.overrideWithValue(() async => File('${tmp.path}/biblioteca.json')),
       xtreamCredentialsProvider.overrideWith((ref) => XtreamCredentials(host: 'srv.example', username: 'u', password: 'p')),

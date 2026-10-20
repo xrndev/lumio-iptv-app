@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../design_system/widgets/glass_card.dart';
 import '../player/player_providers.dart';
 import '../playlists/playlist_providers.dart';
 import '../playlists/presentation/add_source_dialog.dart';
+import 'language_switcher.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -19,10 +21,10 @@ class SettingsPage extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          Text('Ajustes',
+          Text(AppLocalizations.of(context).navSettings,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
           const SizedBox(height: 24),
-          Text('FUENTE', style: TextStyle(color: s.secondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+          Text(AppLocalizations.of(context).settingsSource, style: TextStyle(color: s.secondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(16),
@@ -34,10 +36,10 @@ class SettingsPage extends ConsumerWidget {
                 ? Row(children: [
                     Icon(Icons.playlist_remove_rounded, color: s.onSurfaceVariant),
                     const SizedBox(width: 12),
-                    const Expanded(child: Text('No hay ninguna fuente guardada.')),
+                    Expanded(child: Text(AppLocalizations.of(context).noSavedSource)),
                     FilledButton(
                       onPressed: () => showAddSourceDialog(context),
-                      child: const Text('Añadir fuente'),
+                      child: Text(AppLocalizations.of(context).addSource),
                     ),
                   ])
                 : Column(
@@ -52,33 +54,40 @@ class SettingsPage extends ConsumerWidget {
                             children: [
                               Text(source.label, style: const TextStyle(fontWeight: FontWeight.w700)),
                               if (channels != null)
-                                Text('$channels canales', style: TextStyle(color: s.onSurfaceVariant, fontSize: 13)),
+                                Text(AppLocalizations.of(context).channelsCount(channels), style: TextStyle(color: s.onSurfaceVariant, fontSize: 13)),
                             ],
                           ),
                         ),
                       ]),
                       const SizedBox(height: 8),
                       Text(
-                        'Se guarda en este equipo y se carga sola al abrir la app. '
-                        'Las credenciales se almacenan cifradas por el sistema.',
+                        AppLocalizations.of(context).settingsStoredNote,
                         style: TextStyle(color: s.onSurfaceVariant, fontSize: 13),
                       ),
                       const SizedBox(height: 16),
                       Wrap(spacing: 12, runSpacing: 8, children: [
                         OutlinedButton.icon(
                           icon: const Icon(Icons.swap_horiz_rounded),
-                          label: const Text('Cambiar fuente'),
+                          label: Text(AppLocalizations.of(context).changeSource),
                           onPressed: () => showAddSourceDialog(context),
                         ),
                         OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(foregroundColor: s.error),
                           icon: const Icon(Icons.delete_outline_rounded),
-                          label: const Text('Eliminar fuente'),
+                          label: Text(AppLocalizations.of(context).deleteSource),
                           onPressed: () => _confirmDelete(context, ref),
                         ),
                       ]),
                     ],
                   ),
+          ),
+          const SizedBox(height: 28),
+          Text(AppLocalizations.of(context).settingsLanguage,
+              style: TextStyle(color: s.secondary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+          const SizedBox(height: 10),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(width: 240, child: LanguageSwitcher(extended: true)),
           ),
         ],
       ),
@@ -88,15 +97,16 @@ class SettingsPage extends ConsumerWidget {
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('¿Eliminar la fuente?'),
-        content: const Text(
-          'Se borrarán de este equipo la lista guardada y, si la hay, la cuenta Xtream. '
-          'Tendrás que volver a añadirla para ver canales, películas y series.',
-        ),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogContext).deleteSourceTitle),
+        content: Text(AppLocalizations.of(dialogContext).deleteSourceBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Eliminar')),
+          TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(AppLocalizations.of(dialogContext).commonCancel)),
+          FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(AppLocalizations.of(dialogContext).commonDelete)),
         ],
       ),
     );

@@ -5,6 +5,7 @@ import 'dart:isolate';
 import 'package:dio/dio.dart';
 
 import '../epg/epg.dart';
+import '../errors.dart';
 import '../models/channel.dart';
 import '../models/media.dart';
 import '../util/stable_hash.dart';
@@ -84,10 +85,10 @@ class XtreamClient {
     final info = await _get(c, null);
     final userInfo = (await Isolate.run(() => jsonDecode(info)) as Map)['user_info'];
     if (userInfo is! Map) {
-      throw const FormatException('Respuesta inválida: credenciales o servidor incorrectos');
+      throw const AppError(AppErrorCode.invalidResponse);
     }
     final account = XtreamAccount.fromJson(userInfo.cast<String, dynamic>());
-    if (!account.isActive) throw StateError('Cuenta no activa (${account.status})');
+    if (!account.isActive) throw AppError(AppErrorCode.inactiveAccount, account.status);
 
     final cats = await _getCached(c, 'get_live_categories', ttl: ttl);
     final streams = await _getCached(c, 'get_live_streams', ttl: ttl);
@@ -333,9 +334,7 @@ class XtreamClient {
       return r.data ?? '';
     } on DioException catch (e) {
       final code = e.response?.statusCode;
-      throw StateError(code == null
-          ? 'No se pudo conectar con ${c.host}'
-          : 'El servidor respondió HTTP $code');
+      throw AppError(code == null ? AppErrorCode.cannotConnect : AppErrorCode.httpStatus, code == null ? c.host : '$code');
     }
   }
 
@@ -380,25 +379,33 @@ class XtreamClient {
   }
 }
 
+enum AccountNoticeKind { inactive, expired, expiresToday, expiresInDays }
+
+/// Aviso sobre la cuenta; la UI lo traduce (`accountNoticeText`).
+class AccountNotice {
+  const AccountNotice(this.kind, {this.days = 0, this.status = ''});
+  final AccountNoticeKind kind;
+  final int days;
+  final String status;
+}
+
 /// Aviso sobre la cuenta que conviene enseñar al usuario, o `null` si todo va bien.
 /// Lógica pura (recibe la hora) para poder testearla.
-String? accountNotice(XtreamAccount a, DateTime now) {
-  if (!a.isActive) return 'Tu cuenta no está activa (${a.status}). Contacta con tu proveedor.';
+AccountNotice? accountNotice(XtreamAccount a, DateTime now) {
+  if (!a.isActive) return AccountNotice(AccountNoticeKind.inactive, status: a.status);
   final exp = a.expiry;
   if (exp != null) {
-    if (exp.isBefore(now)) return 'Tu suscripción ha caducado. Renueva con tu proveedor.';
+    if (exp.isBefore(now)) return const AccountNotice(AccountNoticeKind.expired);
     final days = exp.difference(now).inDays;
     if (days <= 7) {
       return days == 0
-          ? 'Tu suscripción caduca hoy.'
-          : 'Tu suscripción caduca en $days ${days == 1 ? 'día' : 'días'}.';
+          ? const AccountNotice(AccountNoticeKind.expiresToday)
+          : AccountNotice(AccountNoticeKind.expiresInDays, days: days);
     }
   }
   return null;
 }
 
-/// Pista cuando un canal falla y la cuenta solo permite una conexión.
-String? connectionHint(XtreamAccount? a) {
-  if (a == null || a.maxConnections == null || a.maxConnections! > 1) return null;
-  return 'Tu cuenta permite 1 sola conexión: si la usas en otro dispositivo, este canal puede no abrirse.';
-}
+/// `true` si la cuenta solo permite una conexión (pista cuando un canal falla).
+bool hasSingleConnection(XtreamAccount? a) =>
+    a != null && a.maxConnections != null && a.maxConnections! <= 1;

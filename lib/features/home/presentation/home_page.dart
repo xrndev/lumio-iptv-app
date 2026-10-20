@@ -17,7 +17,9 @@ import '../../../core/network/xtream_client.dart';
 import '../../player/presentation/player_page.dart';
 import '../../player/presentation/player_view.dart';
 import '../../playlists/playlist_providers.dart';
+import '../../settings/language_switcher.dart';
 import '../../settings/settings_page.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../vod/presentation/media_page.dart';
 import '../../library/library_providers.dart';
 import '../../library/progress_tracker.dart';
@@ -26,21 +28,24 @@ import 'favorites_page.dart';
 import 'recents_page.dart';
 import 'search_page.dart';
 
-const _destinations = [
-  AdaptiveDestination(
-      icon: Icons.live_tv_outlined, selectedIcon: Icons.live_tv_rounded, label: 'En vivo'),
-  AdaptiveDestination(
-      icon: Icons.movie_outlined, selectedIcon: Icons.movie_rounded, label: 'Películas'),
-  AdaptiveDestination(
-      icon: Icons.video_library_outlined, selectedIcon: Icons.video_library_rounded, label: 'Series'),
-  AdaptiveDestination(
-      icon: Icons.search_rounded, selectedIcon: Icons.search_rounded, label: 'Buscar'),
-  AdaptiveDestination(
-      icon: Icons.star_outline_rounded, selectedIcon: Icons.star_rounded, label: 'Favoritos'),
-AdaptiveDestination(      icon: Icons.history_rounded, selectedIcon: Icons.history_rounded, label: 'Recientes'),
-  AdaptiveDestination(
-      icon: Icons.settings_outlined, selectedIcon: Icons.settings_rounded, label: 'Ajustes'),
-];
+List<AdaptiveDestination> _destinations(AppLocalizations l) => [
+      AdaptiveDestination(
+          icon: Icons.live_tv_outlined, selectedIcon: Icons.live_tv_rounded, label: l.navLive),
+      AdaptiveDestination(
+          icon: Icons.movie_outlined, selectedIcon: Icons.movie_rounded, label: l.navMovies),
+      AdaptiveDestination(
+          icon: Icons.video_library_outlined,
+          selectedIcon: Icons.video_library_rounded,
+          label: l.navSeries),
+      AdaptiveDestination(
+          icon: Icons.search_rounded, selectedIcon: Icons.search_rounded, label: l.navSearch),
+      AdaptiveDestination(
+          icon: Icons.star_outline_rounded, selectedIcon: Icons.star_rounded, label: l.navFavorites),
+      AdaptiveDestination(
+          icon: Icons.history_rounded, selectedIcon: Icons.history_rounded, label: l.navRecents),
+      AdaptiveDestination(
+          icon: Icons.settings_outlined, selectedIcon: Icons.settings_rounded, label: l.navSettings),
+    ];
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -130,7 +135,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     return AdaptiveScaffold(
-      destinations: _destinations,
+      destinations: _destinations(AppLocalizations.of(context)),
+      sidebarFooter: (context, extended) => LanguageSwitcher(extended: extended),
       selectedIndex: _index,
       onSelected: (i) => setState(() => _index = i),
       body: switch (_index) {
@@ -180,9 +186,9 @@ class _LiveTab extends ConsumerWidget {
           const Expanded(child: _PlayerColumn()),
           if (ultraWide) ...[
             const SizedBox(width: 12),
-            const SizedBox(
+            SizedBox(
               width: 360,
-              child: GlassCard(child: Center(child: Text('Guía EPG (pendiente)'))),
+              child: GlassCard(child: Center(child: Text(AppLocalizations.of(context).epgPending))),
             ),
           ],
         ],
@@ -250,14 +256,14 @@ class _NowPlayingCard extends ConsumerWidget {
       padding: const EdgeInsets.all(20),
       child: ch == null
           ? Center(
-              child: Text('Elige un canal de la lista para empezar',
+              child: Text(AppLocalizations.of(context).nowPlayingEmpty,
                   style: TextStyle(color: s.onSurfaceVariant)),
             )
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('AHORA REPRODUCIENDO',
+                  Text(AppLocalizations.of(context).nowPlayingLabel,
                       style: TextStyle(
                           color: s.secondary,
                           fontSize: 11,
@@ -275,13 +281,13 @@ class _NowPlayingCard extends ConsumerWidget {
                     runSpacing: 8,
                     children: [
                       if (ch.group.isNotEmpty) _Pill(icon: Icons.folder_outlined, text: ch.group),
-                      if (ch.number != null) _Pill(icon: Icons.tag_rounded, text: 'Canal ${ch.number}'),
+                      if (ch.number != null) _Pill(icon: Icons.tag_rounded, text: AppLocalizations.of(context).channelNumber('${ch.number}')),
                       if (ch.supportsCatchup)
                         _Pill(
                           icon: Icons.history_rounded,
                           text: ch.catchupDays == null
-                              ? 'Catch-up'
-                              : 'Catch-up ${ch.catchupDays} d',
+                              ? AppLocalizations.of(context).catchup
+                              : AppLocalizations.of(context).catchupDays(ch.catchupDays!),
                         ),
                     ],
                   ),

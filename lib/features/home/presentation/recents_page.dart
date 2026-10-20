@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../design_system/widgets/glass_card.dart';
 import '../../library/library_providers.dart';
 import '../../player/presentation/player_page.dart';
@@ -28,21 +29,21 @@ class RecentsPage extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
             child: Row(children: [
-              Text('Recientes',
+              Text(AppLocalizations.of(context).navRecents,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
               const Spacer(),
               if (items.isNotEmpty)
                 TextButton.icon(
                   onPressed: () => ref.read(libraryProvider.notifier).clearRecents(),
                   icon: const Icon(Icons.delete_outline_rounded),
-                  label: const Text('Borrar'),
+                  label: Text(AppLocalizations.of(context).recentsClear),
                 ),
             ]),
           ),
           Expanded(
             child: items.isEmpty
                 ? Center(
-                    child: Text('Aún no has visto ningún canal.\nLos últimos que abras aparecerán aquí.',
+                    child: Text(AppLocalizations.of(context).recentsEmpty,
                         textAlign: TextAlign.center,
                         style: TextStyle(color: s.onSurfaceVariant, height: 1.5)),
                   )

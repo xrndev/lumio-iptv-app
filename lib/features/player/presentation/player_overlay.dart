@@ -9,6 +9,8 @@ import 'package:media_kit_video/media_kit_video.dart';
 
 import '../../../core/library/library_data.dart';
 import '../../../core/network/xtream_client.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../l10n/error_text.dart';
 import '../../playlists/playlist_providers.dart';
 import '../../../core/util/channel_names.dart';
 import '../../../design_system/theme/app_theme.dart';
@@ -66,14 +68,16 @@ class _PlayerOverlayState extends ConsumerState<PlayerOverlay> {
   }
 
   Future<void> _changeVolume(double delta) async {
+    final l = AppLocalizations.of(context);
     await _engine.changeVolume(delta);
-    _showHud('Volumen ${_engine.volume.round()}%');
+    _showHud(l.volumePercent(_engine.volume.round()));
     _poke();
   }
 
   Future<void> _toggleMute() async {
+    final l = AppLocalizations.of(context);
     await _engine.toggleMute();
-    _showHud(_engine.isMuted ? 'Silenciado' : 'Volumen ${_engine.volume.round()}%');
+    _showHud(_engine.isMuted ? l.muted : l.volumePercent(_engine.volume.round()));
     _poke();
   }
 
@@ -267,7 +271,7 @@ class _StatusLayer extends StatelessWidget {
                     children: [
                       const Icon(Icons.error_outline_rounded, color: Colors.white70, size: 36),
                       const SizedBox(height: 10),
-                      Text(status.message,
+                      Text(playbackNoticeText(AppLocalizations.of(context), status.notice),
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.white)),
                       if (status.detail.isNotEmpty) ...[
@@ -281,11 +285,11 @@ class _StatusLayer extends StatelessWidget {
                             style: const TextStyle(color: Colors.white54, fontSize: 12)),
                       ],
                       Consumer(builder: (context, ref, _) {
-                        final hint = connectionHint(ref.watch(xtreamAccountProvider));
-                        if (hint == null) return const SizedBox.shrink();
+                        final single = hasSingleConnection(ref.watch(xtreamAccountProvider));
+                        if (!single) return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: Text(hint,
+                          child: Text(AppLocalizations.of(context).singleConnectionHint,
                               textAlign: TextAlign.center,
                               style: const TextStyle(color: Colors.white70, fontSize: 12)),
                         );
@@ -293,7 +297,7 @@ class _StatusLayer extends StatelessWidget {
                       const SizedBox(height: 14),
                       FilledButton.icon(
                         icon: const Icon(Icons.refresh_rounded),
-                        label: const Text('Reintentar'),
+                        label: Text(AppLocalizations.of(context).commonRetry),
                         onPressed: engine.retry,
                       ),
                     ],
@@ -315,9 +319,10 @@ class _StatusLayer extends StatelessWidget {
                       height: 44,
                       child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
                     ),
-                    if (status.message.isNotEmpty) ...[
+                    if (status.notice != PlaybackNotice.none) ...[
                       const SizedBox(height: 12),
-                      Text(status.message, style: const TextStyle(color: Colors.white70)),
+                      Text(playbackNoticeText(AppLocalizations.of(context), status.notice),
+                          style: const TextStyle(color: Colors.white70)),
                     ],
                   ],
                 ),
@@ -361,7 +366,7 @@ class _EpgLine extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Ahora: ${now.title}${next == null ? '' : '  ·  Después: ${next.title}'}',
+        Text(next == null ? AppLocalizations.of(context).playerNow(now.title) : AppLocalizations.of(context).playerNowNext(now.title, next.title),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white, fontSize: 12)),
@@ -374,7 +379,7 @@ class _EpgLine extends ConsumerWidget {
               value: now.progress(t),
               minHeight: 3,
               backgroundColor: Colors.white24,
-              semanticsLabel: 'Progreso del programa',
+              semanticsLabel: AppLocalizations.of(context).programProgress,
             ),
           ),
         ),
@@ -420,7 +425,7 @@ class _TopBar extends StatelessWidget {
           children: [
             if (onBack != null)
               IconButton(
-                tooltip: 'Volver',
+                tooltip: AppLocalizations.of(context).commonBack,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                 color: Colors.white,
                 icon: const Icon(Icons.arrow_back_rounded),
@@ -433,8 +438,8 @@ class _TopBar extends StatelessWidget {
                   color: AppColors.live,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('EN VIVO',
-                    style: TextStyle(
+                child: Text(AppLocalizations.of(context).liveBadge,
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -516,7 +521,7 @@ class _BottomBar extends StatelessWidget {
                 if (!live)
                   _RoundButton(
                     icon: Icons.replay_10_rounded,
-                    tooltip: 'Retroceder 10 s (←)',
+                    tooltip: AppLocalizations.of(context).rewind10,
                     onPressed: () => onSkip(-10),
                   ),
                 StreamBuilder<bool>(
@@ -526,7 +531,7 @@ class _BottomBar extends StatelessWidget {
                     final playing = snap.data ?? false;
                     return _RoundButton(
                       icon: playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      tooltip: playing ? 'Pausar (Espacio)' : 'Reproducir (Espacio)',
+                      tooltip: playing ? AppLocalizations.of(context).pauseTip : AppLocalizations.of(context).playTip,
                       size: 30,
                       onPressed: engine.togglePlay,
                     );
@@ -535,7 +540,7 @@ class _BottomBar extends StatelessWidget {
                 if (!live)
                   _RoundButton(
                     icon: Icons.forward_10_rounded,
-                    tooltip: 'Avanzar 10 s (→)',
+                    tooltip: AppLocalizations.of(context).forward10,
                     onPressed: () => onSkip(10),
                   ),
                 const SizedBox(width: 4),
@@ -552,7 +557,7 @@ class _BottomBar extends StatelessWidget {
                               : v < 40
                                   ? Icons.volume_down_rounded
                                   : Icons.volume_up_rounded,
-                          tooltip: v == 0 ? 'Activar sonido (M)' : 'Silenciar (M)',
+                          tooltip: v == 0 ? AppLocalizations.of(context).unmuteTip : AppLocalizations.of(context).muteTip,
                           onPressed: onMute,
                         ),
                         // En pantallas estrechas solo queda el botón de silencio: el volumen
@@ -567,7 +572,7 @@ class _BottomBar extends StatelessWidget {
                                 thumbColor: Colors.white,
                               ),
                               child: Semantics(
-                                label: 'Volumen',
+                                label: AppLocalizations.of(context).volumeLabel,
                                 value: '${v.round()}%',
                                 child: Slider(value: v, min: 0, max: 100, onChanged: onVolume),
                               ),
@@ -586,7 +591,7 @@ class _BottomBar extends StatelessWidget {
                 const Spacer(),
                 _TracksButton(engine: engine),
                 PopupMenuButton<AspectMode>(
-                  tooltip: 'Relación de aspecto',
+                  tooltip: AppLocalizations.of(context).aspectRatio,
                   icon: const Icon(Icons.aspect_ratio_rounded, color: Colors.white),
                   onSelected: engine.setAspect,
                   itemBuilder: (_) => [
@@ -597,7 +602,7 @@ class _BottomBar extends StatelessWidget {
                   icon: state.isFullscreen()
                       ? Icons.fullscreen_exit_rounded
                       : Icons.fullscreen_rounded,
-                  tooltip: 'Pantalla completa (F)',
+                  tooltip: AppLocalizations.of(context).fullscreenTip,
                   size: 28,
                   onPressed: state.toggleFullscreen,
                 ),
@@ -660,7 +665,7 @@ class _SeekBarState extends State<_SeekBar> {
                       thumbColor: Colors.white,
                     ),
                     child: Semantics(
-                      label: 'Progreso',
+                      label: AppLocalizations.of(context).commonProgress,
                       value: _fmt(pos),
                       child: Slider(
                         value: value,
@@ -695,11 +700,11 @@ class _TracksButton extends StatelessWidget {
   const _TracksButton({required this.engine});
   final PlayerEngine engine;
 
-  static String _label(String id, String? title, String? language, int n) {
-    if (id == 'auto') return 'Automático';
-    if (id == 'no') return 'Desactivados';
+  static String _label(AppLocalizations l, String id, String? title, String? language, int n) {
+    if (id == 'auto') return l.trackAuto;
+    if (id == 'no') return l.trackOff;
     final parts = [if (title != null && title.isNotEmpty) title, if (language != null && language.isNotEmpty) language];
-    return parts.isEmpty ? 'Pista $n' : parts.join(' · ');
+    return parts.isEmpty ? l.trackN(n) : parts.join(' · ');
   }
 
   @override
@@ -713,7 +718,7 @@ class _TracksButton extends StatelessWidget {
         final subs = tracks.subtitle;
         final hasChoice = audio.length > 3 || subs.length > 2;
         return PopupMenuButton<Object>(
-          tooltip: 'Audio y subtítulos',
+          tooltip: AppLocalizations.of(context).audioAndSubtitles,
           enabled: audio.isNotEmpty || subs.isNotEmpty,
           icon: Icon(Icons.subtitles_rounded,
               color: hasChoice ? Colors.white : Colors.white70),
@@ -722,18 +727,18 @@ class _TracksButton extends StatelessWidget {
             if (t is SubtitleTrack) engine.setSubtitleTrack(t);
           },
           itemBuilder: (_) => [
-            const PopupMenuItem<Object>(enabled: false, child: Text('Audio')),
+            PopupMenuItem<Object>(enabled: false, child: Text(AppLocalizations.of(context).audio)),
             for (var i = 0; i < audio.length; i++)
               PopupMenuItem<Object>(
                 value: audio[i],
-                child: Text(_label(audio[i].id, audio[i].title, audio[i].language, i)),
+                child: Text(_label(AppLocalizations.of(context), audio[i].id, audio[i].title, audio[i].language, i)),
               ),
             const PopupMenuDivider(),
-            const PopupMenuItem<Object>(enabled: false, child: Text('Subtítulos')),
+            PopupMenuItem<Object>(enabled: false, child: Text(AppLocalizations.of(context).subtitles)),
             for (var i = 0; i < subs.length; i++)
               PopupMenuItem<Object>(
                 value: subs[i],
-                child: Text(_label(subs[i].id, subs[i].title, subs[i].language, i)),
+                child: Text(_label(AppLocalizations.of(context), subs[i].id, subs[i].title, subs[i].language, i)),
               ),
           ],
         );

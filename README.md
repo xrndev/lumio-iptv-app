@@ -1,83 +1,92 @@
 <p align="center">
-  <img src="assets/branding/lumio_icon_round.png" width="112" alt="Logo de Lumio">
+  <img src="assets/branding/lumio_icon_round.png" width="112" alt="Lumio logo">
 </p>
 
 <h1 align="center">Lumio</h1>
 
 <p align="center">
-  Reproductor IPTV hecho con Flutter: una sola base de código para Android, Android TV / Fire TV, iOS, Windows, macOS y Linux.<br>
-  Pensado para listas de 50.000+ canales sin bloquear la interfaz.
+  <b>English</b> · <a href="README.es.md">Español</a>
+</p>
+
+<p align="center">
+  An IPTV player built with Flutter: one codebase for Android, Android TV / Fire TV, iOS, Windows, macOS and Linux.<br>
+  Designed for playlists of 50,000+ channels without freezing the UI.
 </p>
 
 <p align="center">
   <a href="https://buymeacoffee.com/xrndev"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-xrndev-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-GPL--3.0-blue" alt="Licencia GPL-3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0 license"></a>
 </p>
 
-> **Estado: prototipo temprano.** Probado a mano en Windows y en un Fire TV Stick 4K Max; el resto de plataformas solo con pruebas automáticas. Lumio no incluye canales ni listas: aporta tu propia fuente.
+> **Status: early prototype.** Hand-tested on Windows and on a Fire TV Stick 4K Max; other platforms only have automated tests. Lumio ships with no channels or playlists: bring your own source.
 
-## Funciones
+## Features
 
-- **Fuentes:** M3U por URL, archivo local y Xtream Codes (en vivo, películas, series, catch-up). La fuente se guarda cifrada y se restaura sola.
-- **Rápido:** 50.000 canales parseados en ~370 ms; listas cacheadas en disco para arrancar sin red.
-- **Reproductor** (`media_kit`/libmpv, decodificación por hardware, 4K/HEVC) con recuperación automática de errores, pistas de audio/subtítulos, ±10 s y atajos de teclado.
-- **Biblioteca:** favoritos, recientes y continuar viendo, transferibles entre dispositivos con un código. Búsqueda global y guía "Ahora / Después".
-- **Chromecast** y **modo TV** (mando de Fire TV / Android TV, foco con D-Pad).
-- Interfaz adaptativa (móvil, tablet, escritorio, TV), tema oscuro y accesible (teclado, lector de pantalla).
+- **Sources:** M3U by URL, local file and Xtream Codes (live, movies, series, catch-up). The source is stored encrypted and restored automatically.
+- **Fast:** 50,000 channels parsed in ~370 ms; playlists cached on disk so the app starts without a network.
+- **Player** (`media_kit`/libmpv, hardware decoding, 4K/HEVC) with automatic error recovery, audio/subtitle tracks, ±10 s seeking and keyboard shortcuts.
+- **Library:** favorites, recents and continue watching, transferable between devices with a code. Global search and a "Now / Next" guide.
+- **Chromecast** and **TV mode** (Fire TV / Android TV remote, D-Pad focus).
+- **English and Spanish:** an `ES | EN` language switch in the menu (and in Settings); it follows the system language by default.
+- Adaptive UI (phone, tablet, desktop, TV), dark theme and accessibility (keyboard, screen reader).
 
-Pendiente: sincronización automática, EPG XMLTV completa, control parental, multi-pantalla, PiP nativo. Detalle y estado de verificación en [`CLAUDE.md`](CLAUDE.md).
+Pending: automatic sync, full XMLTV EPG, parental controls, multi-screen, native PiP. Details and verification status in [`CLAUDE.md`](CLAUDE.md) (in Spanish).
 
-## Instalar
+## Install
 
-Descarga el paquete de la última versión en [Releases](../../releases):
+Download the package from the latest release in [Releases](../../releases):
 
-| Sistema | Paquete | Instalación |
+| System | Package | How to install |
 |---|---|---|
-| Windows 10/11 | `Lumio-windows.zip` | Descomprimir y ejecutar `Install.cmd` (sin administrador). |
-| Linux | `Lumio-linux-x64.tar.gz` | Descomprimir y ejecutar `./install.sh`. |
-| macOS | `Lumio-macos.zip` | Arrastrar a Aplicaciones; sin firmar: clic derecho → Abrir. |
-| Android / Fire TV | `Lumio-android.apk` | Instalar el APK (orígenes desconocidos). Fire OS 6+; en Fire TV: `./scripts/android/install-device.ps1 -Ip <IP>` con la depuración ADB activada. |
-| iOS | — | Aún no se distribuye (requiere firma de Apple). |
+| Windows 10/11 | `Lumio-windows.zip` | Unzip and run `Install.cmd` (no admin needed). |
+| Linux | `Lumio-linux-x64.tar.gz` | Unzip and run `./install.sh`. |
+| macOS | `Lumio-macos.zip` | Drag to Applications; unsigned: right-click → Open. |
+| Android / Fire TV | `Lumio-android.apk` | Install the APK (unknown sources). Fire OS 6+; on Fire TV: `./scripts/android/install-device.ps1 -Ip <IP>` with ADB debugging on. |
+| iOS | — | Not distributed yet (needs Apple signing). |
 
-## Desarrollo
+## Development
 
 ```powershell
-./scripts/setup.ps1     # Windows  (./scripts/setup.sh en macOS / Linux): instala Flutter y dependencias
+./scripts/setup.ps1     # Windows  (./scripts/setup.sh on macOS / Linux): installs Flutter and dependencies
 flutter pub get
-flutter run -d windows  # o linux / macos / android
+flutter run -d windows  # or linux / macos / android
 flutter analyze && flutter test
 ```
 
-Paquetes locales: `./scripts/package-windows.ps1 -Install` (Windows) o `./scripts/package.sh` (Linux/macOS). Arquitectura, capas y convenciones: [`CLAUDE.md`](CLAUDE.md).
+Local packages: `./scripts/package-windows.ps1 -Install` (Windows) or `./scripts/package.sh` (Linux/macOS). Architecture, layers and conventions: [`CLAUDE.md`](CLAUDE.md).
 
-## Cómo contribuir
+### Translations
 
-1. **Haz un fork** del repositorio y clónalo.
-2. **Crea una rama** desde `main` con un nombre descriptivo:
+UI strings live in `lib/l10n/app_es.arb` (the template) and `lib/l10n/app_en.arb`. To add or change a string, edit **both** files and run `flutter gen-l10n`; in code use `AppLocalizations.of(context).key`. For a new language: copy `app_en.arb` to `app_<code>.arb`, translate it, then add the code to `supportedLanguageCodes` (`lib/features/settings/locale_providers.dart`) and its name to `languageNames` (`language_switcher.dart`).
+
+## Contributing
+
+1. **Fork** the repository and clone it.
+2. **Create a branch** from `main` with a descriptive name:
    ```bash
    git checkout main && git pull
-   git checkout -b feat/mi-cambio      # o fix/..., docs/...
+   git checkout -b feat/my-change      # or fix/..., docs/...
    ```
-3. **Haz tus cambios** siguiendo las convenciones de [`CLAUDE.md`](CLAUDE.md) (capas, accesibilidad, un test por parser nuevo). Antes de subir:
+3. **Make your changes** following the conventions in [`CLAUDE.md`](CLAUDE.md) (layers, accessibility, a unit test for every new parser, strings in both `.arb` files). Before pushing:
    ```bash
    flutter analyze && flutter test
    ```
-4. **Commits pequeños y claros**, en imperativo (`Corrige el foco en la barra lateral`).
-5. **Sube la rama y abre una Pull Request** hacia `main`:
+4. **Small, clear commits**, in the imperative (`Fix focus on the sidebar`).
+5. **Push the branch and open a Pull Request** against `main`:
    ```bash
-   git push -u origin feat/mi-cambio
+   git push -u origin feat/my-change
    ```
-   Explica qué cambia y por qué, y en qué plataforma lo probaste. Si toca la interfaz, añade una captura.
-6. La rama `main` está **protegida**: no se admiten pushes directos, y la PR debe pasar el check `calidad` (análisis + tests) antes de fusionarse.
+   Explain what changes and why, and which platform you tested on. Add a screenshot if the UI changes.
+6. `main` is **protected**: no direct pushes, and the PR must pass the `calidad` check (analysis + tests) before it can be merged.
 
-Para errores o ideas, abre primero un *issue*. Al contribuir aceptas que tu aportación se publique bajo la licencia GPL-3.0.
+For bugs or ideas, open an *issue* first. By contributing you agree that your work is released under the GPL-3.0 license.
 
-## Apoyar el proyecto
+## Support the project
 
-Si Lumio te resulta útil, puedes invitarme a un café:
+If Lumio is useful to you, you can buy me a coffee:
 
 <a href="https://buymeacoffee.com/xrndev"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=xrndev&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="48"></a>
 
-## Aviso legal
+## Legal notice
 
-Lumio es solo un reproductor: no proporciona, aloja ni recomienda contenido. Eres responsable de usar únicamente fuentes sobre las que tengas derecho.
+Lumio is only a player: it does not provide, host or recommend any content. You are responsible for using only sources you have the right to use.

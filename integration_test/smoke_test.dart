@@ -13,8 +13,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lumio/app.dart';
+import 'package:lumio/core/storage/locale_store.dart';
 import 'package:lumio/core/storage/source_store.dart';
 import 'package:lumio/features/playlists/playlist_providers.dart';
+import 'package:lumio/features/settings/locale_providers.dart';
 import 'package:media_kit/media_kit.dart';
 
 void main() {
@@ -30,7 +32,10 @@ void main() {
           '#EXTINF:-1 group-title="Prueba",Canal Beta\nhttp://127.0.0.1:9/beta.ts\n');
 
     final container = ProviderContainer(
-      overrides: [sourceStoreProvider.overrideWithValue(MemorySourceStore())],
+      overrides: [
+        sourceStoreProvider.overrideWithValue(MemorySourceStore()),
+        localeStoreProvider.overrideWithValue(MemoryLocaleStore('es')),
+      ],
     );
     addTearDown(container.dispose);
 
