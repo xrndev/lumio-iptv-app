@@ -198,7 +198,7 @@ class _NavItem extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
+            duration: const Duration(milliseconds: 80), // ágil también en mandos de TV con CPU modesta
             constraints: const BoxConstraints(minHeight: 48),
             padding: EdgeInsets.symmetric(horizontal: extended ? 14 : (stacked ? 0 : 8), vertical: stacked ? 8 : 12),
             decoration: BoxDecoration(

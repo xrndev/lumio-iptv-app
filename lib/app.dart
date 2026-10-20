@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'design_system/theme/app_theme.dart';
+import 'design_system/widgets/glass_card.dart';
 import 'features/home/presentation/home_page.dart';
 import 'platform_channels/tv_provider.dart';
 
@@ -25,15 +26,19 @@ class IptvApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Lumio',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
+      // Siempre tema oscuro (identidad de la marca), sea cual sea el modo del sistema.
+      theme: AppTheme.dark(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       builder: (context, child) {
         if (!tv || child == null) return child ?? const SizedBox.shrink();
         final mq = MediaQuery.of(context);
-        return MediaQuery(
-          data: mq.copyWith(textScaler: tvAwareTextScaler(mq.textScaler, tv: tv)),
-          child: child,
+        return GlassBlur(
+          enabled: false,
+          child: MediaQuery(
+            data: mq.copyWith(textScaler: tvAwareTextScaler(mq.textScaler, tv: tv)),
+            child: child,
+          ),
         );
       },
       home: const HomePage(),
